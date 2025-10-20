@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  active      Boolean      @default(true)
+  thumbnail   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  releaseAt   DateTime?    @default(now())
+  level       String
+  icon        String?
+  tags        String[]
+  description String
+  authorId    String
+  author      Author       @relation(fields: [authorId], references: [id])
+  modules     Module[]
+  userCourses UserCourse[]
+}
+
+model Module {
+  id                 String               @id @default(cuid())
+  title              String
+  slug               String               @unique
+  courseId           String
+  groups             Group[]
+  course             Course               @relation(fields: [courseId], references: [id])
+  userCourses        UserCourse[]
+  userModuleProgress UserModuleProgress[]
+}
+
+model Group {
+  id       Int      @id @default(autoincrement())
+  title    String
+  moduleId String
+  module   Module   @relation(fields: [moduleId], references: [id])
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id             Int            @id @default(autoincrement())
+  title          String
+  description    String
+  type           String
+  slug           String         @unique
+  url            String?
+  isFree         Boolean        @default(false)
+  video_url      String?
+  video_duration String?
+  locked         Boolean        @default(false)
+  completed      Boolean        @default(false)
+  submoduleId    Int
+  order          Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  authorId       String
+  author         Author         @relation(fields: [authorId], references: [id])
+  submodule      Group          @relation(fields: [submoduleId], references: [id])
+  userCourses    UserCourse[]
+  userProgress   UserProgress[]
+}
+
+model Author {
+  id        String   @id @default(cuid())
+  name      String
+  avatar    String?
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  courses   Course[]
+  lessons   Lesson[]
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  name         String
+  password     String
+  avatar       String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  userCourses  UserCourse[]
+  userProgress UserProgress[]
+}
+
+model UserCourse {
+  id                 String               @id @default(cuid())
+  userId             String
+  courseId           String
+  enrolledAt         DateTime             @default(now())
+  lastAccessedAt     DateTime             @default(now())
+  isCompleted        Boolean              @default(false)
+  completedAt        DateTime?
+  currentModuleId    String?
+  currentTaskId      Int?
+  progress           Float                @default(0.0)
+  course             Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  currentModule      Module?              @relation(fields: [currentModuleId], references: [id])
+  currentTask        Lesson?              @relation(fields: [currentTaskId], references: [id])
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userModuleProgress UserModuleProgress[]
+  userProgress       UserProgress[]
+
+  @@unique([userId, courseId])
+}
+
+model UserProgress {
+  id           String     @id @default(cuid())
+  userId       String
+  taskId       Int
+  userCourseId String
+  isCompleted  Boolean    @default(false)
+  completedAt  DateTime?
+  timeSpent    Int        @default(0)
+  lastPosition Int?
+  attempts     Int        @default(0)
+  score        Float?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  task         Lesson     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userCourse   UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+}
+
+model UserModuleProgress {
+  id             String     @id @default(cuid())
+  userId         String
+  moduleId       String
+  userCourseId   String
+  isCompleted    Boolean    @default(false)
+  completedAt    DateTime?
+  progress       Float      @default(0.0)
+  tasksCompleted Int        @default(0)
+  totalTasks     Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  module         Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userCourse     UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+}
