@@ -27,7 +27,26 @@ model Course {
   modules      Module[]
   userCourses  UserCourse[]
   Certificate  Certificate[]
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
 }
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "Front-end", "Design"
+  slug        String   @unique  // "front-end", "design"
+  description String?
+  icon        String?
+  color       String?  // Para UI (#FF5733)
+  order       Int      @default(0)  // Ordenação
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  courses     Course[]
+}
+
 
 model Module {
   id                 String               @id @default(cuid())
