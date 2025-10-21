@@ -15,7 +15,25 @@ interface CreateCourseData {
   releaseAt?: Date | null;
 }
 
+interface UpdateCourseData {
+  title?: string;
+  slug?: string;
+  description?: string;
+  level?: string;
+  categoryId?: string | null;
+  thumbnail?: string | null;
+  icon?: string | null;
+  tags?: string[];
+  isFree?: boolean;
+  active?: boolean;
+  releaseAt?: Date | null;
+}
+
 export interface ICourseRepository {
   create(data: CreateCourseData): Promise<Course>;
+  findAll(): Promise<Course[]>;
+  findById(id: string): Promise<Course | null>;
   findBySlug(slug: string): Promise<Course | null>;
+  update(id: string, data: UpdateCourseData): Promise<Course>;
+  delete(id: string): Promise<void>;
 }

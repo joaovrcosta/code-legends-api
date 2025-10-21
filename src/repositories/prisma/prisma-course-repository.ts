@@ -17,6 +17,20 @@ interface CreateCourseData {
   releaseAt?: Date | null;
 }
 
+interface UpdateCourseData {
+  title?: string;
+  slug?: string;
+  description?: string;
+  level?: string;
+  categoryId?: string | null;
+  thumbnail?: string | null;
+  icon?: string | null;
+  tags?: string[];
+  isFree?: boolean;
+  active?: boolean;
+  releaseAt?: Date | null;
+}
+
 export class PrismaCourseRepository implements ICourseRepository {
   async create(data: CreateCourseData): Promise<Course> {
     const course = await prisma.course.create({
@@ -39,13 +53,131 @@ export class PrismaCourseRepository implements ICourseRepository {
     return course;
   }
 
+  async findAll(): Promise<Course[]> {
+    const courses = await prisma.course.findMany({
+      where: {
+        active: true,
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return courses;
+  }
+
+  async findById(id: string): Promise<Course | null> {
+    const course = await prisma.course.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+      },
+    });
+
+    return course;
+  }
+
   async findBySlug(slug: string): Promise<Course | null> {
     const course = await prisma.course.findUnique({
       where: {
         slug,
       },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+      },
     });
 
     return course;
+  }
+
+  async update(id: string, data: UpdateCourseData): Promise<Course> {
+    const course = await prisma.course.update({
+      where: {
+        id,
+      },
+      data,
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+      },
+    });
+
+    return course;
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.course.delete({
+      where: {
+        id,
+      },
+    });
   }
 }
