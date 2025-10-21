@@ -5,7 +5,7 @@ import fastifyCors from "@fastify/cors";
 import fastifyCookie from "@fastify/cookie";
 import fastifyJwt from "@fastify/jwt";
 import { env } from "./env";
-import { usersRoutes } from "./http/controllers/users/routes";
+import { usersRoutes } from "./http/controllers/account/routes";
 
 export const app = fastify();
 
