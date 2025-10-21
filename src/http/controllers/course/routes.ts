@@ -6,8 +6,8 @@ import { listPopular } from "./list-popular.controller";
 import { getBySlug } from "./get-by-slug.controller";
 import { update } from "./update.controller";
 import { remove } from "./delete.controller";
-import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyAdmin } from "../../middlewares/verify-admin";
+import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-admin";
 
 export async function courseRoutes(app: FastifyInstance) {
   // Rotas públicas
@@ -16,8 +16,8 @@ export async function courseRoutes(app: FastifyInstance) {
   app.get("/courses/popular", listPopular); // Suporta ?limit=10
   app.get("/courses/:slug", getBySlug);
 
-  // Rotas autenticadas
-  app.post("/courses", { onRequest: [verifyJWT] }, create);
+  // Rotas protegidas - apenas INSTRUCTOR ou ADMIN
+  app.post("/courses", { onRequest: [verifyInstructorOrAdmin] }, create);
 
   // Rotas protegidas - apenas ADMIN
   app.put("/courses/:id", { onRequest: [verifyAdmin] }, update);
