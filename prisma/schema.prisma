@@ -81,15 +81,26 @@ model Author {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  name         String
-  password     String
-  avatar       String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  userCourses  UserCourse[]
-  userProgress UserProgress[]
+  id             String         @id @default(cuid())
+  email          String         @unique
+  name           String
+  password       String
+  avatar         String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  birth_date     DateTime?
+  born_in        String?
+  document       String?
+  foreign_phone  String?
+  fullname       String?
+  gender         String?
+  marital_status MaritalStatus  @default(SINGLE)
+  occupation     String?
+  phone          String?
+  rg             String?
+  Address        Address?
+  userCourses    UserCourse[]
+  userProgress   UserProgress[]
 }
 
 model UserCourse {
@@ -150,4 +161,27 @@ model UserModuleProgress {
   userCourse     UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, moduleId])
+}
+
+model Address {
+  id              String  @id
+  userId          String  @unique
+  country         String?
+  foreign_country Boolean @default(false)
+  postal_code     String?
+  street_name     String?
+  number          String?
+  complement      String?
+  neighborhood    String?
+  city            String?
+  state           String?
+  foreign_address String?
+  User            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
 }
