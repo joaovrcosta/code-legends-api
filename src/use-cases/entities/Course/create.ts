@@ -1,8 +1,10 @@
 import { Course } from "@prisma/client";
 import { ICourseRepository } from "../../../repositories/course-repository";
 import { IUsersRepository } from "../../../repositories/users-repository";
+import { ICategoryRepository } from "../../../repositories/category-repository";
 import { CourseAlreadyExistsError } from "../../errors/course-already-exists";
 import { InstructorNotFoundError } from "../../errors/instructor-not-found";
+import { CategoryNotFoundError } from "../../errors/category-not-found";
 
 interface CreateCourseRequest {
   title: string;
@@ -10,6 +12,7 @@ interface CreateCourseRequest {
   description: string;
   level: string;
   instructorId: string;
+  categoryId?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
   tags?: string[];
@@ -25,7 +28,8 @@ interface CreateCourseResponse {
 export class CreateCourseUseCase {
   constructor(
     private courseRepository: ICourseRepository,
-    private usersRepository: IUsersRepository
+    private usersRepository: IUsersRepository,
+    private categoryRepository: ICategoryRepository
   ) {}
 
   async execute(data: CreateCourseRequest): Promise<CreateCourseResponse> {
@@ -48,6 +52,15 @@ export class CreateCourseUseCase {
     // Validar se o usuário tem role de INSTRUCTOR ou ADMIN
     if (instructor.role !== "INSTRUCTOR" && instructor.role !== "ADMIN") {
       throw new Error("User is not an instructor");
+    }
+
+    // Validar categoria (se fornecida)
+    if (data.categoryId) {
+      const category = await this.categoryRepository.findById(data.categoryId);
+
+      if (!category) {
+        throw new CategoryNotFoundError();
+      }
     }
 
     const course = await this.courseRepository.create(data);

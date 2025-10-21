@@ -3,6 +3,7 @@ import { z } from "zod";
 import { makeCreateCourseUseCase } from "../../../utils/factories/make-create-course-use-case";
 import { CourseAlreadyExistsError } from "../../../use-cases/errors/course-already-exists";
 import { InstructorNotFoundError } from "../../../use-cases/errors/instructor-not-found";
+import { CategoryNotFoundError } from "../../../use-cases/errors/category-not-found";
 
 export async function create(request: FastifyRequest, reply: FastifyReply) {
   const createCourseBodySchema = z.object({
@@ -11,6 +12,7 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
     description: z.string(),
     level: z.string(),
     instructorId: z.string(),
+    categoryId: z.string().optional(),
     thumbnail: z.string().optional(),
     icon: z.string().optional(),
     tags: z.array(z.string()).optional(),
@@ -25,6 +27,7 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
     description,
     level,
     instructorId,
+    categoryId,
     thumbnail,
     icon,
     tags,
@@ -42,6 +45,7 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
       description,
       level,
       instructorId,
+      categoryId: categoryId ?? null,
       thumbnail: thumbnail ?? null,
       icon: icon ?? null,
       tags: tags ?? [],
@@ -59,6 +63,10 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
     }
 
     if (error instanceof InstructorNotFoundError) {
+      return reply.status(404).send({ message: error.message });
+    }
+
+    if (error instanceof CategoryNotFoundError) {
       return reply.status(404).send({ message: error.message });
     }
 

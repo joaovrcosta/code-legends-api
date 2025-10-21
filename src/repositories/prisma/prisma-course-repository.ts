@@ -8,6 +8,7 @@ interface CreateCourseData {
   description: string;
   level: string;
   instructorId: string;
+  categoryId?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
   tags?: string[];
@@ -25,6 +26,7 @@ export class PrismaCourseRepository implements ICourseRepository {
         description: data.description,
         level: data.level,
         instructorId: data.instructorId,
+        categoryId: data.categoryId ?? null,
         thumbnail: data.thumbnail ?? null,
         icon: data.icon ?? null,
         tags: data.tags ?? [],

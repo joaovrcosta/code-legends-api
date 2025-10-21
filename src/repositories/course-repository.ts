@@ -6,6 +6,7 @@ interface CreateCourseData {
   description: string;
   level: string;
   instructorId: string;
+  categoryId?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
   tags?: string[];
