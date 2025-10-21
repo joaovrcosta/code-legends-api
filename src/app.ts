@@ -10,6 +10,7 @@ import { courseRoutes } from "./http/controllers/course/routes";
 import { categoryRoutes } from "./http/controllers/category/routes";
 import { moduleRoutes } from "./http/controllers/module/routes";
 import { groupRoutes } from "./http/controllers/group/routes";
+import { lessonRoutes } from "./http/controllers/lesson/routes";
 import { env } from "./env/index";
 
 export const app = fastify();
@@ -37,6 +38,7 @@ app.register(courseRoutes);
 app.register(categoryRoutes);
 app.register(moduleRoutes);
 app.register(groupRoutes);
+app.register(lessonRoutes);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
