@@ -29,9 +29,17 @@ interface UpdateCourseData {
   releaseAt?: Date | null;
 }
 
+interface FindAllFilters {
+  categoryId?: string;
+  instructorId?: string;
+  search?: string;
+}
+
 export interface ICourseRepository {
   create(data: CreateCourseData): Promise<Course>;
-  findAll(): Promise<Course[]>;
+  findAll(filters?: FindAllFilters): Promise<Course[]>;
+  findRecent(limit?: number): Promise<Course[]>;
+  findPopular(limit?: number): Promise<Course[]>;
   findById(id: string): Promise<Course | null>;
   findBySlug(slug: string): Promise<Course | null>;
   update(id: string, data: UpdateCourseData): Promise<Course>;

@@ -1,6 +1,12 @@
 import { Course } from "@prisma/client";
 import { ICourseRepository } from "../../../repositories/course-repository";
 
+interface ListCoursesRequest {
+  categoryId?: string;
+  instructorId?: string;
+  search?: string;
+}
+
 interface ListCoursesResponse {
   courses: Course[];
 }
@@ -8,8 +14,8 @@ interface ListCoursesResponse {
 export class ListCoursesUseCase {
   constructor(private courseRepository: ICourseRepository) {}
 
-  async execute(): Promise<ListCoursesResponse> {
-    const courses = await this.courseRepository.findAll();
+  async execute(filters?: ListCoursesRequest): Promise<ListCoursesResponse> {
+    const courses = await this.courseRepository.findAll(filters);
 
     return {
       courses,

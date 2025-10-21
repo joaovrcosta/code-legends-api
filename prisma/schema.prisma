@@ -18,6 +18,7 @@ model Course {
   updatedAt    DateTime      @updatedAt
   releaseAt    DateTime?     @default(now())
   isFree       Boolean       @default(false)
+  subscriptions Int           @default(0)
   level        String
   icon         String?
   tags         String[]

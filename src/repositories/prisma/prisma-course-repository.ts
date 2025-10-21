@@ -31,6 +31,12 @@ interface UpdateCourseData {
   releaseAt?: Date | null;
 }
 
+interface FindAllFilters {
+  categoryId?: string;
+  instructorId?: string;
+  search?: string;
+}
+
 export class PrismaCourseRepository implements ICourseRepository {
   async create(data: CreateCourseData): Promise<Course> {
     const course = await prisma.course.create({
@@ -53,7 +59,79 @@ export class PrismaCourseRepository implements ICourseRepository {
     return course;
   }
 
-  async findAll(): Promise<Course[]> {
+  async findAll(filters?: FindAllFilters): Promise<Course[]> {
+    const where: any = {
+      active: true,
+    };
+
+    // Filtro por categoria
+    if (filters?.categoryId) {
+      where.categoryId = filters.categoryId;
+    }
+
+    // Filtro por instrutor
+    if (filters?.instructorId) {
+      where.instructorId = filters.instructorId;
+    }
+
+    // Busca por título ou descrição
+    if (filters?.search) {
+      where.OR = [
+        {
+          title: {
+            contains: filters.search,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: filters.search,
+            mode: "insensitive",
+          },
+        },
+        {
+          tags: {
+            has: filters.search.toLowerCase(),
+          },
+        },
+      ];
+    }
+
+    const courses = await prisma.course.findMany({
+      where,
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+        _count: {
+          select: {
+            userCourses: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return courses;
+  }
+
+  async findRecent(limit: number = 10): Promise<Course[]> {
     const courses = await prisma.course.findMany({
       where: {
         active: true,
@@ -76,10 +154,56 @@ export class PrismaCourseRepository implements ICourseRepository {
             icon: true,
           },
         },
+        _count: {
+          select: {
+            userCourses: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
+      take: limit,
+    });
+
+    return courses;
+  }
+
+  async findPopular(limit: number = 10): Promise<Course[]> {
+    const courses = await prisma.course.findMany({
+      where: {
+        active: true,
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+        _count: {
+          select: {
+            userCourses: true,
+          },
+        },
+      },
+      orderBy: {
+        userCourses: {
+          _count: "desc",
+        },
+      },
+      take: limit,
     });
 
     return courses;
