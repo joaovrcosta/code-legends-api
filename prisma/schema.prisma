@@ -9,22 +9,24 @@ datasource db {
 }
 
 model Course {
-  id          String       @id @default(cuid())
-  title       String
-  slug        String       @unique
-  active      Boolean      @default(true)
-  thumbnail   String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  releaseAt   DateTime?    @default(now())
-  level       String
-  icon        String?
-  tags        String[]
-  description String
-  authorId    String
-  author      Author       @relation(fields: [authorId], references: [id])
-  modules     Module[]
-  userCourses UserCourse[]
+  id           String        @id @default(cuid())
+  title        String
+  slug         String        @unique
+  active       Boolean       @default(true)
+  thumbnail    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  releaseAt    DateTime?     @default(now())
+  isFree       Boolean       @default(false)
+  level        String
+  icon         String?
+  tags         String[]
+  description  String
+  instructorId String
+  instructor   User          @relation("CourseInstructor", fields: [instructorId], references: [id])
+  modules      Module[]
+  userCourses  UserCourse[]
+  Certificate  Certificate[]
 }
 
 model Module {
@@ -58,49 +60,50 @@ model Lesson {
   video_duration String?
   locked         Boolean        @default(false)
   completed      Boolean        @default(false)
+  completedAt    DateTime?
   submoduleId    Int
   order          Int            @default(0)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   authorId       String
-  author         Author         @relation(fields: [authorId], references: [id])
+  author         User           @relation("LessonAuthor", fields: [authorId], references: [id])
   submodule      Group          @relation(fields: [submoduleId], references: [id])
   userCourses    UserCourse[]
   userProgress   UserProgress[]
 }
 
-model Author {
-  id        String   @id @default(cuid())
-  name      String
-  avatar    String?
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  courses   Course[]
-  lessons   Lesson[]
-}
-
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
+  id             String        @id @default(cuid())
+  email          String        @unique
   name           String
   password       String
   avatar         String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  slug           String?       @unique
+  bio            String?
+  expertise      String[]      @default([])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   birth_date     DateTime?
   born_in        String?
   document       String?
   foreign_phone  String?
   fullname       String?
   gender         String?
-  marital_status MaritalStatus  @default(SINGLE)
+  marital_status MaritalStatus @default(SINGLE)
+  role           Role          @default(STUDENT)
   occupation     String?
   phone          String?
   rg             String?
   Address        Address?
-  userCourses    UserCourse[]
-  userProgress   UserProgress[]
+
+  // Relações como aluno
+  userCourses  UserCourse[]
+  userProgress UserProgress[]
+  Certificate  Certificate[]
+
+  // Relações como instrutor
+  coursesAsInstructor Course[] @relation("CourseInstructor")
+  lessonsAsAuthor     Lesson[] @relation("LessonAuthor")
 }
 
 model UserCourse {
@@ -179,9 +182,36 @@ model Address {
   User            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Certificate {
+  id         String               @id @default(cuid())
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  templateId String?
+  template   CertificateTemplate? @relation(fields: [templateId], references: [id])
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+}
+
+model CertificateTemplate {
+  id           String        @id @default(cuid())
+  name         String
+  description  String
+  certificates Certificate[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
 enum MaritalStatus {
   SINGLE
   MARRIED
   DIVORCED
   WIDOWED
+}
+
+enum Role {
+  INSTRUCTOR
+  ADMIN
+  STUDENT
 }
