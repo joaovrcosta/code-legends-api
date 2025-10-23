@@ -9,25 +9,26 @@ datasource db {
 }
 
 model Course {
-  id           String        @id @default(cuid())
-  title        String
-  slug         String        @unique
-  active       Boolean       @default(true)
-  thumbnail    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  releaseAt    DateTime?     @default(now())
-  isFree       Boolean       @default(false)
-  subscriptions Int           @default(0)
-  level        String
-  icon         String?
-  tags         String[]
-  description  String
-  instructorId String
-  instructor   User          @relation("CourseInstructor", fields: [instructorId], references: [id])
-  modules      Module[]
-  userCourses  UserCourse[]
-  Certificate  Certificate[]
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  active          Boolean          @default(true)
+  thumbnail       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  releaseAt       DateTime?        @default(now())
+  isFree          Boolean          @default(false)
+  subscriptions   Int              @default(0)
+  level           String
+  icon            String?
+  tags            String[]
+  description     String
+  instructorId    String
+  instructor      User             @relation("CourseInstructor", fields: [instructorId], references: [id])
+  modules         Module[]
+  userCourses     UserCourse[]
+  Certificate     Certificate[]
+  favoriteCourses FavoriteCourse[]
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
@@ -117,9 +118,10 @@ model User {
   Address        Address?
 
   // Relações como aluno
-  userCourses  UserCourse[]
-  userProgress UserProgress[]
-  Certificate  Certificate[]
+  userCourses     UserCourse[]
+  userProgress    UserProgress[]
+  Certificate     Certificate[]
+  favoriteCourses FavoriteCourse[]
 
   // Relações como instrutor
   coursesAsInstructor Course[] @relation("CourseInstructor")
@@ -221,6 +223,17 @@ model CertificateTemplate {
   certificates Certificate[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+}
+
+model FavoriteCourse {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
 }
 
 enum MaritalStatus {
