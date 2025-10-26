@@ -17,3 +17,4 @@ export function makeAddFavoriteCourseUseCase() {
   return addFavoriteCourseUseCase;
 }
 
+

@@ -14,3 +14,4 @@ export function makeListFavoriteCoursesUseCase() {
   return listFavoriteCoursesUseCase;
 }
 
+
