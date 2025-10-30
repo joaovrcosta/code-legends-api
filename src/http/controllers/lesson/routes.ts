@@ -8,6 +8,7 @@ import { complete } from "./complete.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyAdmin } from "../../middlewares/verify-admin";
 import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-admin";
+import { verifyLessonAccess } from "../../middlewares/verify-lesson-access";
 
 export async function lessonRoutes(app: FastifyInstance) {
   // Rotas aninhadas em groups
@@ -18,13 +19,28 @@ export async function lessonRoutes(app: FastifyInstance) {
     create
   );
 
-  // Rotas públicas de lições
-  app.get("/lessons/:slug", getBySlug);
+  // Rotas protegidas de lições - requer autenticação e verificação de acesso
+  app.get(
+    "/lessons/:slug",
+    {
+      onRequest: [verifyJWT, verifyLessonAccess({ lessonSlugParam: "slug" })],
+    },
+    getBySlug
+  );
 
   // Rotas protegidas - apenas ADMIN
   app.put("/lessons/:id", { onRequest: [verifyAdmin] }, update);
   app.delete("/lessons/:id", { onRequest: [verifyAdmin] }, remove);
 
-  // Rotas protegidas - requer autenticação JWT
-  app.post("/lessons/:id/complete", { onRequest: [verifyJWT] }, complete);
+  // Rotas protegidas - requer autenticação JWT e verificação de acesso
+  app.post(
+    "/lessons/:id/complete",
+    {
+      onRequest: [
+        verifyJWT,
+        verifyLessonAccess({ lessonIdParam: "id", allowInstructors: false }),
+      ],
+    },
+    complete
+  );
 }
