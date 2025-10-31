@@ -98,7 +98,21 @@ export function verifyLessonAccess(options: VerifyLessonAccessOptions = {}) {
         });
       }
 
-      // Verificar se a aula está desbloqueada
+      // Verificar se a aula foi concluída (permitir revisão)
+      const userProgressRepository = new PrismaUserProgressRepository();
+      const userProgress = await userProgressRepository.findByUserAndTask(
+        userId,
+        lesson.id
+      );
+
+      const isCompleted = userProgress?.isCompleted ?? false;
+
+      // Se a aula foi concluída, sempre permite acesso (revisão)
+      if (isCompleted) {
+        return; // Permite acesso para revisão
+      }
+
+      // Se não foi concluída, verificar se está desbloqueada
       const isUnlocked = await checkIfLessonIsUnlocked(
         userId,
         lesson.id,

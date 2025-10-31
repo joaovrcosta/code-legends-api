@@ -15,6 +15,7 @@ interface RoadmapLesson {
   order: number;
   status: "locked" | "unlocked" | "completed";
   isCurrent: boolean;
+  canReview: boolean; // Permite revisitar aulas concluídas
 }
 
 interface RoadmapGroup {
@@ -161,6 +162,9 @@ export class GetRoadmapUseCase {
 
           const isCurrent = lesson.id === currentTaskId;
 
+          // Pode revisar se a aula foi concluída
+          const canReview = isCompleted;
+
           return {
             id: lesson.id,
             title: lesson.title,
@@ -172,6 +176,7 @@ export class GetRoadmapUseCase {
             order: lesson.order,
             status,
             isCurrent,
+            canReview,
           };
         });
 
