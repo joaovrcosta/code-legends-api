@@ -17,6 +17,22 @@ import { env } from "./env/index";
 
 export const app = fastify();
 
+// Configurar parser de JSON para aceitar body vazio
+app.removeContentTypeParser("application/json");
+app.addContentTypeParser(
+  "application/json",
+  { parseAs: "string" },
+  (req, body, done) => {
+    try {
+      const json =
+        body === "" || body == null ? {} : JSON.parse(body as string);
+      done(null, json);
+    } catch (err) {
+      done(err as Error, undefined);
+    }
+  }
+);
+
 app.register(fastifyCors, {
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
