@@ -16,10 +16,14 @@ export async function list(request: FastifyRequest, reply: FastifyReply) {
   try {
     const listCoursesUseCase = makeListCoursesUseCase();
 
+    // Incluir userId se o usuário estiver autenticado
+    const userId = request.user?.id;
+
     const { courses } = await listCoursesUseCase.execute({
       categoryId: category,
       instructorId: instructor,
       search,
+      userId, // Passar userId opcional
     });
 
     return reply.status(200).send({ courses });

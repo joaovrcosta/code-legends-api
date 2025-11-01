@@ -11,12 +11,13 @@ import { getRoadmap } from "./get-roadmap.controller";
 import { continueCourse } from "./continue.controller";
 import { listEnrolled } from "./list-enrolled.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
+import { verifyJWTOptional } from "../../middlewares/verify-jwt-optional";
 import { verifyAdmin } from "../../middlewares/verify-admin";
 import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-admin";
 
 export async function courseRoutes(app: FastifyInstance) {
-  // Rotas públicas
-  app.get("/courses", list); // Suporta ?category=id&instructor=id&search=termo
+  // Rotas públicas (com autenticação opcional para incluir isEnrolled)
+  app.get("/courses", { onRequest: [verifyJWTOptional] }, list); // Suporta ?category=id&instructor=id&search=termo - isEnrolled incluído se autenticado
   app.get("/courses/recent", listRecent); // Suporta ?limit=10
   app.get("/courses/popular", listPopular); // Suporta ?limit=10
   app.get("/courses/:slug", getBySlug);
