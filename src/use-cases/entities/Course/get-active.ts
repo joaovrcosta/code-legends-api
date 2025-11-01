@@ -13,6 +13,7 @@ interface GetActiveCourseResponse {
     slug: string;
     thumbnail: string | null;
     description: string;
+    icon: string | null;
     progress: number;
     isCompleted: boolean;
     currentModuleId: string | null;
@@ -64,6 +65,7 @@ export class GetActiveCourseUseCase {
         slug: course.slug,
         thumbnail: course.thumbnail,
         description: course.description,
+        icon: course.icon,
         progress: userCourse.progress,
         isCompleted: userCourse.isCompleted,
         currentModuleId: userCourse.currentModuleId,
@@ -72,4 +74,3 @@ export class GetActiveCourseUseCase {
     };
   }
 }
-
