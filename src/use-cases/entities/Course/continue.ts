@@ -1,12 +1,13 @@
 import { ICourseRepository } from "../../../repositories/course-repository";
 import { IUserCourseRepository } from "../../../repositories/user-course-repository";
 import { ILessonRepository } from "../../../repositories/lesson-repository";
+import { IUsersRepository } from "../../../repositories/users-repository";
 import { CourseNotFoundError } from "../../errors/course-not-found";
 import { prisma } from "../../../lib/prisma";
 
 interface ContinueCourseRequest {
   userId: string;
-  courseId: string;
+  courseId?: string; // Opcional: se não fornecido, busca o curso ativo
 }
 
 interface ContinueCourseResponse {
@@ -38,15 +39,39 @@ export class ContinueCourseUseCase {
   constructor(
     private courseRepository: ICourseRepository,
     private userCourseRepository: IUserCourseRepository,
-    private lessonRepository: ILessonRepository
+    private lessonRepository: ILessonRepository,
+    private usersRepository: IUsersRepository
   ) {}
 
   async execute({
     userId,
     courseId,
   }: ContinueCourseRequest): Promise<ContinueCourseResponse> {
+    // Se courseId não for fornecido, buscar o curso ativo do usuário
+    let activeCourseId = courseId;
+
+    if (!activeCourseId) {
+      const user = await this.usersRepository.findById(userId);
+      activeCourseId = user?.activeCourseId ?? null;
+
+      if (!activeCourseId) {
+        // Se não tem curso ativo e não foi fornecido courseId, retornar null
+        return {
+          lesson: null,
+          module: null,
+          course: {
+            id: "",
+            title: "",
+            slug: "",
+            progress: 0,
+            isCompleted: false,
+          },
+        };
+      }
+    }
+
     // Verificar se o curso existe
-    const course = await this.courseRepository.findById(courseId);
+    const course = await this.courseRepository.findById(activeCourseId);
     if (!course) {
       throw new CourseNotFoundError();
     }
@@ -54,7 +79,7 @@ export class ContinueCourseUseCase {
     // Buscar inscrição do usuário
     const userCourse = await this.userCourseRepository.findByUserAndCourse(
       userId,
-      courseId
+      activeCourseId
     );
 
     if (!userCourse) {

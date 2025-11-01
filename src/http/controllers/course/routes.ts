@@ -10,6 +10,8 @@ import { enroll } from "./enroll.controller";
 import { getRoadmap } from "./get-roadmap.controller";
 import { continueCourse } from "./continue.controller";
 import { listEnrolled } from "./list-enrolled.controller";
+import { start } from "./start.controller";
+import { getActive } from "./get-active.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyJWTOptional } from "../../middlewares/verify-jwt-optional";
 import { verifyAdmin } from "../../middlewares/verify-admin";
@@ -31,7 +33,10 @@ export async function courseRoutes(app: FastifyInstance) {
 
   // Rotas protegidas - requer autenticação JWT
   app.post("/courses/:id/enroll", { onRequest: [verifyJWT] }, enroll);
+  app.post("/courses/:id/start", { onRequest: [verifyJWT] }, start);
   app.get("/courses/:id/roadmap", { onRequest: [verifyJWT] }, getRoadmap);
   app.get("/courses/:id/continue", { onRequest: [verifyJWT] }, continueCourse);
+  app.get("/courses/continue", { onRequest: [verifyJWT] }, continueCourse); // Sem ID: usa curso ativo
   app.get("/courses/enrolled", { onRequest: [verifyJWT] }, listEnrolled);
+  app.get("/account/active-course", { onRequest: [verifyJWT] }, getActive);
 }

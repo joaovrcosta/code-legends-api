@@ -10,6 +10,7 @@ export async function verifyInstructorOrAdmin(
 
     // Verifica se o usuário tem role INSTRUCTOR ou ADMIN
     const userRole = request.user.role;
+    console.log("request.user", request.user);
 
     if (userRole !== "INSTRUCTOR" && userRole !== "ADMIN") {
       return reply.status(403).send({

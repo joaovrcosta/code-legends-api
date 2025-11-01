@@ -29,6 +29,7 @@ model Course {
   userCourses     UserCourse[]
   Certificate     Certificate[]
   favoriteCourses FavoriteCourse[]
+  activeUsers     User[]           @relation("ActiveCourse")
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
@@ -122,6 +123,8 @@ model User {
   userProgress    UserProgress[]
   Certificate     Certificate[]
   favoriteCourses FavoriteCourse[]
+  activeCourseId  String?
+  activeCourse    Course?          @relation("ActiveCourse", fields: [activeCourseId], references: [id])
 
   // Relações como instrutor
   coursesAsInstructor Course[] @relation("CourseInstructor")

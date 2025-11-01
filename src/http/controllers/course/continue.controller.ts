@@ -8,7 +8,7 @@ export async function continueCourse(
   reply: FastifyReply
 ) {
   const continueCourseParamsSchema = z.object({
-    id: z.string(),
+    id: z.string().optional(), // Opcional: se não fornecido, usa o curso ativo
   });
 
   const { id } = continueCourseParamsSchema.parse(request.params);
@@ -18,7 +18,7 @@ export async function continueCourse(
 
     const result = await continueCourseUseCase.execute({
       userId: request.user.id,
-      courseId: id,
+      courseId: id, // Pode ser undefined, o use case vai buscar o curso ativo
     });
 
     return reply.status(200).send(result);

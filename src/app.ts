@@ -67,9 +67,15 @@ app.setErrorHandler((error, _, reply) => {
       .send({ message: "validation error", issues: error.format() });
   }
 
+  // Sempre logar erros para debug
+  console.error("Unhandled error:", error);
+  
   if (env.NODE_ENV !== "production") {
-    console.error(error);
-  } else {
+    return reply.status(500).send({ 
+      message: "internal server error",
+      error: error.message,
+      stack: error.stack 
+    });
   }
 
   return reply.status(500).send({ message: "internal server error" });

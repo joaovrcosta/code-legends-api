@@ -45,6 +45,8 @@ export class CreateCourseUseCase {
     // Verificar se o instrutor existe
     const instructor = await this.usersRepository.findById(data.instructorId);
 
+    console.log("instructor", instructor);
+
     if (!instructor) {
       throw new InstructorNotFoundError();
     }

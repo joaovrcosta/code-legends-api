@@ -45,12 +45,13 @@ export class PrismaUserCourseRepository implements IUserCourseRepository {
     const firstGroup = firstModule?.groups[0];
     const firstLesson = firstGroup?.lessons[0];
 
+    // Criar inscrição SEM definir currentModule/Task (não ativa automaticamente)
     const userCourse = await prisma.userCourse.create({
       data: {
         userId,
         courseId,
-        currentModuleId: firstModule?.id ?? null,
-        currentTaskId: firstLesson?.id ?? null,
+        currentModuleId: null, // Não ativa automaticamente
+        currentTaskId: null,    // Não ativa automaticamente
         progress: 0.0,
         isCompleted: false,
         enrolledAt: new Date(),
