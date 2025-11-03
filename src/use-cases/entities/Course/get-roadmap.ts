@@ -104,24 +104,6 @@ export class GetRoadmapUseCase {
       progressMap.set(progress.taskId, progress.isCompleted);
     });
 
-    // Buscar progressos dos módulos
-    const moduleProgresses = userCourse?.id
-      ? await prisma.userModuleProgress.findMany({
-          where: { userCourseId: userCourse.id },
-        })
-      : [];
-
-    const moduleProgressMap = new Map<
-      string,
-      { progress: number; isCompleted: boolean }
-    >();
-    moduleProgresses.forEach((mp) => {
-      moduleProgressMap.set(mp.moduleId, {
-        progress: mp.progress,
-        isCompleted: mp.isCompleted,
-      });
-    });
-
     // Construir todas as aulas em ordem para determinar desbloqueio
     const allLessons: Array<{ id: number }> = [];
     modules.forEach((module) => {
@@ -136,10 +118,24 @@ export class GetRoadmapUseCase {
 
     // Construir o roadmap
     const roadmapModules: RoadmapModule[] = modules.map((module) => {
-      const moduleProgress = moduleProgressMap.get(module.id) ?? {
-        progress: 0,
-        isCompleted: false,
-      };
+      // Calcular progresso do módulo em tempo real
+      const moduleLessons: Array<{ id: number }> = [];
+      module.groups.forEach((group) => {
+        group.lessons.forEach((lesson) => {
+          moduleLessons.push({ id: lesson.id });
+        });
+      });
+
+      const totalModuleLessons = moduleLessons.length;
+      const completedModuleLessons = userProgresses.filter((p) => {
+        return p.isCompleted && moduleLessons.some((l) => l.id === p.taskId);
+      }).length;
+
+      const moduleProgressValue =
+        totalModuleLessons > 0
+          ? completedModuleLessons / totalModuleLessons
+          : 0;
+      const moduleCompleted = completedModuleLessons === totalModuleLessons;
 
       const roadmapGroups: RoadmapGroup[] = module.groups.map((group) => {
         const roadmapLessons: RoadmapLesson[] = group.lessons.map((lesson) => {
@@ -192,8 +188,8 @@ export class GetRoadmapUseCase {
         title: module.title,
         slug: module.slug,
         groups: roadmapGroups,
-        progress: moduleProgress.progress,
-        isCompleted: moduleProgress.isCompleted,
+        progress: moduleProgressValue,
+        isCompleted: moduleCompleted,
       };
     });
 
