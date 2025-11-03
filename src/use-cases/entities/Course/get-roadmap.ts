@@ -105,16 +105,50 @@ export class GetRoadmapUseCase {
     });
 
     // Construir todas as aulas em ordem para determinar desbloqueio
-    const allLessons: Array<{ id: number }> = [];
-    modules.forEach((module) => {
-      module.groups.forEach((group) => {
+    // Incluir order, moduleIndex e groupIndex para ordenação correta
+    const allLessons: Array<{
+      id: number;
+      order: number;
+      moduleIndex: number;
+      groupIndex: number;
+    }> = [];
+    modules.forEach((module, moduleIndex) => {
+      module.groups.forEach((group, groupIndex) => {
         group.lessons.forEach((lesson) => {
-          allLessons.push({ id: lesson.id });
+          allLessons.push({
+            id: lesson.id,
+            order: lesson.order,
+            moduleIndex,
+            groupIndex,
+          });
         });
       });
     });
 
+    // Ordenar todas as lições por: módulo -> grupo -> order
+    allLessons.sort((a, b) => {
+      if (a.moduleIndex !== b.moduleIndex) {
+        return a.moduleIndex - b.moduleIndex;
+      }
+      if (a.groupIndex !== b.groupIndex) {
+        return a.groupIndex - b.groupIndex;
+      }
+      return a.order - b.order;
+    });
+
     const currentTaskId = userCourse?.currentTaskId ?? null;
+
+    // Verificar se há progresso (lições completadas)
+    const hasProgress = userProgresses.some((p) => p.isCompleted);
+
+    // Determinar qual será a lição atual
+    // Se não houver progresso, ignorar currentTaskId e usar a primeira lição
+    const validCurrentTaskId =
+      hasProgress &&
+      currentTaskId &&
+      allLessons.some((l) => l.id === currentTaskId)
+        ? currentTaskId
+        : allLessons[0]?.id ?? null;
 
     // Construir o roadmap
     const roadmapModules: RoadmapModule[] = modules.map((module) => {
@@ -156,7 +190,7 @@ export class GetRoadmapUseCase {
             status = previousCompleted ? "unlocked" : "locked";
           }
 
-          const isCurrent = lesson.id === currentTaskId;
+          const isCurrent = lesson.id === validCurrentTaskId;
 
           // Pode revisar se a aula foi concluída
           const canReview = isCompleted;
