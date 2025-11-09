@@ -42,6 +42,7 @@ export interface ICourseRepository {
   findPopular(limit?: number): Promise<Course[]>;
   findById(id: string): Promise<Course | null>;
   findBySlug(slug: string): Promise<Course | null>;
+  searchByName(name: string): Promise<Course[]>;
   update(id: string, data: UpdateCourseData): Promise<Course>;
   delete(id: string): Promise<void>;
 }

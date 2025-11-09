@@ -4,6 +4,7 @@ import { list } from "./list.controller";
 import { listRecent } from "./list-recent.controller";
 import { listPopular } from "./list-popular.controller";
 import { getBySlug } from "./get-by-slug.controller";
+import { search } from "./search.controller";
 import { update } from "./update.controller";
 import { remove } from "./delete.controller";
 import { enroll } from "./enroll.controller";
@@ -21,6 +22,7 @@ import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-
 export async function courseRoutes(app: FastifyInstance) {
   // Rotas públicas (com autenticação opcional para incluir isEnrolled)
   app.get("/courses", { onRequest: [verifyJWTOptional] }, list); // Suporta ?category=id&categorySlug=slug&instructor=id&search=termo - isEnrolled incluído se autenticado
+  app.get("/courses/search", { onRequest: [verifyJWTOptional] }, search); // Busca cursos por nome - Suporta ?q=termo - isEnrolled incluído se autenticado
   app.get("/courses/recent", listRecent); // Suporta ?limit=10
   app.get("/courses/popular", listPopular); // Suporta ?limit=10
   app.get("/courses/:slug", getBySlug);

@@ -267,6 +267,47 @@ export class PrismaCourseRepository implements ICourseRepository {
     return course;
   }
 
+  async searchByName(name: string): Promise<Course[]> {
+    const courses = await prisma.course.findMany({
+      where: {
+        active: true,
+        title: {
+          contains: name,
+          mode: "insensitive",
+        },
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            slug: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            color: true,
+            icon: true,
+          },
+        },
+        _count: {
+          select: {
+            userCourses: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return courses;
+  }
+
   async update(id: string, data: UpdateCourseData): Promise<Course> {
     const course = await prisma.course.update({
       where: {
