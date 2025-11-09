@@ -9,6 +9,7 @@ interface CreateCourseData {
   categoryId?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
+  colorHex?: string | null;
   tags?: string[];
   isFree?: boolean;
   active?: boolean;
@@ -23,6 +24,7 @@ interface UpdateCourseData {
   categoryId?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
+  colorHex?: string | null;
   tags?: string[];
   isFree?: boolean;
   active?: boolean;

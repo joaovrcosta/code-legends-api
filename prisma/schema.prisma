@@ -14,6 +14,7 @@ model Course {
   slug            String           @unique
   active          Boolean          @default(true)
   thumbnail       String?
+  colorHex        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   releaseAt       DateTime?        @default(now())

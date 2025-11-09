@@ -14,6 +14,7 @@ interface UpdateCourseRequest {
   categoryId?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
+  colorHex?: string | null;
   tags?: string[];
   isFree?: boolean;
   active?: boolean;
@@ -66,6 +67,7 @@ export class UpdateCourseUseCase {
       categoryId: data.categoryId,
       thumbnail: data.thumbnail,
       icon: data.icon,
+      colorHex: data.colorHex,
       tags: data.tags,
       isFree: data.isFree,
       active: data.active,
