@@ -1,9 +1,11 @@
 import { Course } from "@prisma/client";
 import { ICourseRepository } from "../../../repositories/course-repository";
 import { IUserCourseRepository } from "../../../repositories/user-course-repository";
+import { ICategoryRepository } from "../../../repositories/category-repository";
 
 interface ListCoursesRequest {
   categoryId?: string;
+  categorySlug?: string;
   instructorId?: string;
   search?: string;
   userId?: string; // Opcional: para verificar se está inscrito
@@ -20,13 +22,26 @@ interface ListCoursesResponse {
 export class ListCoursesUseCase {
   constructor(
     private courseRepository: ICourseRepository,
-    private userCourseRepository: IUserCourseRepository
+    private userCourseRepository: IUserCourseRepository,
+    private categoryRepository: ICategoryRepository
   ) {}
 
   async execute(filters?: ListCoursesRequest): Promise<ListCoursesResponse> {
+    let categoryId = filters?.categoryId;
+
+    // Se categorySlug foi fornecido, buscar a categoria pelo slug
+    if (filters?.categorySlug && !categoryId) {
+      const category = await this.categoryRepository.findBySlug(
+        filters.categorySlug
+      );
+      if (category) {
+        categoryId = category.id;
+      }
+    }
+
     // Buscar cursos (1 query)
     const courses = await this.courseRepository.findAll({
-      categoryId: filters?.categoryId,
+      categoryId,
       instructorId: filters?.instructorId,
       search: filters?.search,
     });

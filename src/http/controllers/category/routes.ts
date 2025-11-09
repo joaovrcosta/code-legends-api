@@ -3,11 +3,13 @@ import { list } from "./list.controller";
 import { create } from "./create.controller";
 import { update } from "./update.controller";
 import { remove } from "./delete.controller";
+import { getBySlug } from "./get-by-slug.controller";
 import { verifyAdmin } from "../../middlewares/verify-admin";
 
 export async function categoryRoutes(app: FastifyInstance) {
-  // Rota pública
+  // Rotas públicas
   app.get("/categories", list);
+  app.get("/categories/:slug", getBySlug);
 
   // Rotas protegidas - apenas ADMIN
   app.post("/categories", { onRequest: [verifyAdmin] }, create);

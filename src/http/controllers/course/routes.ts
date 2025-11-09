@@ -20,7 +20,7 @@ import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-
 
 export async function courseRoutes(app: FastifyInstance) {
   // Rotas públicas (com autenticação opcional para incluir isEnrolled)
-  app.get("/courses", { onRequest: [verifyJWTOptional] }, list); // Suporta ?category=id&instructor=id&search=termo - isEnrolled incluído se autenticado
+  app.get("/courses", { onRequest: [verifyJWTOptional] }, list); // Suporta ?category=id&categorySlug=slug&instructor=id&search=termo - isEnrolled incluído se autenticado
   app.get("/courses/recent", listRecent); // Suporta ?limit=10
   app.get("/courses/popular", listPopular); // Suporta ?limit=10
   app.get("/courses/:slug", getBySlug);

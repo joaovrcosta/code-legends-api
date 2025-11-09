@@ -5,13 +5,13 @@ import { makeListCoursesUseCase } from "../../../utils/factories/make-list-cours
 export async function list(request: FastifyRequest, reply: FastifyReply) {
   const listCoursesQuerySchema = z.object({
     category: z.string().optional(),
+    categorySlug: z.string().optional(),
     instructor: z.string().optional(),
     search: z.string().optional(),
   });
 
-  const { category, instructor, search } = listCoursesQuerySchema.parse(
-    request.query
-  );
+  const { category, categorySlug, instructor, search } =
+    listCoursesQuerySchema.parse(request.query);
 
   try {
     const listCoursesUseCase = makeListCoursesUseCase();
@@ -21,6 +21,7 @@ export async function list(request: FastifyRequest, reply: FastifyReply) {
 
     const { courses } = await listCoursesUseCase.execute({
       categoryId: category,
+      categorySlug,
       instructorId: instructor,
       search,
       userId, // Passar userId opcional
