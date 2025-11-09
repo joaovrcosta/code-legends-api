@@ -12,6 +12,7 @@ import { continueCourse } from "./continue.controller";
 import { listEnrolled } from "./list-enrolled.controller";
 import { start } from "./start.controller";
 import { getActive } from "./get-active.controller";
+import { myLearning } from "./my-learning.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyJWTOptional } from "../../middlewares/verify-jwt-optional";
 import { verifyAdmin } from "../../middlewares/verify-admin";
@@ -39,4 +40,5 @@ export async function courseRoutes(app: FastifyInstance) {
   app.get("/courses/continue", { onRequest: [verifyJWT] }, continueCourse); // Sem ID: usa curso ativo
   app.get("/courses/enrolled", { onRequest: [verifyJWT] }, listEnrolled);
   app.get("/account/active-course", { onRequest: [verifyJWT] }, getActive);
+  app.get("/my-learning", { onRequest: [verifyJWT] }, myLearning);
 }
