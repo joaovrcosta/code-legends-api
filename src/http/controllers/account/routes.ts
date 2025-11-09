@@ -3,6 +3,9 @@ import { create } from "./create.controller";
 import { authenticate } from "./authenticate.controller";
 import { profile } from "./profile.controller";
 import { refreshToken } from "./refresh-token.controller";
+import { getOnboardingStatus } from "./get-onboarding-status.controller";
+import { updateOnboarding } from "./update-onboarding.controller";
+import { completeOnboarding } from "./complete-onboarding.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 
 export async function usersRoutes(app: FastifyInstance) {
@@ -12,4 +15,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
   // Rotas autenticadas
   app.get("/me", { onRequest: [verifyJWT] }, profile);
+  app.get("/users/onboarding/status", { onRequest: [verifyJWT] }, getOnboardingStatus);
+  app.post("/users/onboarding", { onRequest: [verifyJWT] }, updateOnboarding);
+  app.post("/users/onboarding/complete", { onRequest: [verifyJWT] }, completeOnboarding);
 }

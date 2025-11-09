@@ -1,24 +1,22 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { makeGetUserProfileUseCase } from "../../../utils/factories/make-get-user-profile-use-case";
+import { makeCompleteOnboardingUseCase } from "../../../utils/factories/make-complete-onboarding-use-case";
 import { UserNotFoundError } from "../../../use-cases/errors/user-not-found";
 
-export async function profile(request: FastifyRequest, reply: FastifyReply) {
+export async function completeOnboarding(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
   try {
-    const getUserProfileUseCase = makeGetUserProfileUseCase();
+    const completeOnboardingUseCase = makeCompleteOnboardingUseCase();
 
-    const { user } = await getUserProfileUseCase.execute({
+    const { user } = await completeOnboardingUseCase.execute({
       userId: request.user.id,
     });
 
     return reply.status(200).send({
       user: {
         id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        onboardingCompleted: user.onboardingCompleted ?? false,
+        onboardingCompleted: user.onboardingCompleted,
         onboardingGoal: user.onboardingGoal,
         onboardingCareer: user.onboardingCareer,
       },
@@ -31,4 +29,3 @@ export async function profile(request: FastifyRequest, reply: FastifyReply) {
     return reply.status(500).send({ message: "Internal server error" });
   }
 }
-

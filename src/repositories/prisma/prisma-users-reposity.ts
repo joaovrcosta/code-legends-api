@@ -44,9 +44,24 @@ export class PrismaUsersRepository implements IUsersRepository {
 
   async update(id: string, data: Partial<User>): Promise<User> {
     // Filtrar apenas campos válidos do User e remover undefined
+    // Excluir campos de relação e campos que não devem ser atualizados diretamente
+    const excludedFields = [
+      'id',
+      'createdAt',
+      'updatedAt',
+      'userCourses',
+      'userProgress',
+      'Certificate',
+      'favoriteCourses',
+      'activeCourse',
+      'coursesAsInstructor',
+      'lessonsAsAuthor',
+      'Address',
+    ];
+
     const updateData: any = {};
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
+      if (value !== undefined && !excludedFields.includes(key)) {
         updateData[key] = value;
       }
     }

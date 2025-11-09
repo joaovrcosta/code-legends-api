@@ -117,6 +117,9 @@ model User {
   phone          String?
   rg             String?
   Address        Address?
+  onboardingCompleted Boolean @default(false)
+  onboardingGoal     String?
+  onboardingCareer   String?
 
   // Relações como aluno
   userCourses     UserCourse[]

@@ -107,6 +107,9 @@ CREATE TABLE "User" (
     "occupation" TEXT,
     "phone" TEXT,
     "rg" TEXT,
+    "onboardingCompleted" BOOLEAN NOT NULL DEFAULT false,
+    "onboardingGoal" TEXT,
+    "onboardingCareer" TEXT,
     "activeCourseId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
