@@ -11,6 +11,7 @@ CREATE TABLE "Course" (
     "slug" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "thumbnail" TEXT,
+    "colorHex" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "releaseAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
