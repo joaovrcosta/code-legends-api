@@ -1,6 +1,7 @@
 import { IUserCourseRepository } from "../../../repositories/user-course-repository";
 import { IUsersRepository } from "../../../repositories/users-repository";
 import { IUserProgressRepository } from "../../../repositories/user-progress-repository";
+import { CertificateRepository } from "../../../repositories/certificate-repository";
 import { UserNotFoundError } from "../../errors/user-not-found";
 import { prisma } from "../../../lib/prisma";
 
@@ -14,6 +15,7 @@ interface CourseItem {
   icon: string | null;
   progress: number;
   completedAt: Date | null;
+  certificateId: string | null;
 }
 
 interface ListCompletedCoursesResponse {
@@ -24,7 +26,8 @@ export class ListCompletedCoursesUseCase {
   constructor(
     private userCourseRepository: IUserCourseRepository,
     private usersRepository: IUsersRepository,
-    private userProgressRepository: IUserProgressRepository
+    private userProgressRepository: IUserProgressRepository,
+    private certificateRepository: CertificateRepository
   ) {}
 
   async execute({
@@ -95,12 +98,20 @@ export class ListCompletedCoursesUseCase {
         });
 
         if (course) {
+          // Buscar certificado do curso
+          const certificate =
+            await this.certificateRepository.findByUserIdAndCourseId(
+              userId,
+              course.id
+            );
+
           const courseItem: CourseItem = {
             id: course.id,
             title: course.title,
             icon: course.icon,
             progress: courseProgress,
             completedAt: userCourse.completedAt,
+            certificateId: certificate?.id ?? null,
           };
 
           completed.push(courseItem);

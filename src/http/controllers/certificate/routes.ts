@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { createCertificate } from "./create.controller";
 import { listCertificates } from "./list.controller";
 import { getCertificateById } from "./get-by-id.controller";
+import { verifyCertificate } from "./verify.controller";
 import { deleteCertificate } from "./delete.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-admin";

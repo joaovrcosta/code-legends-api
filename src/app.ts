@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import fastifyCors from "@fastify/cors";
 import fastifyCookie from "@fastify/cookie";
 import fastifyJwt from "@fastify/jwt";
+import fastifyRateLimit from "@fastify/rate-limit";
 
 import { usersRoutes } from "./http/controllers/account/routes";
 import { courseRoutes } from "./http/controllers/course/routes";
@@ -13,6 +14,7 @@ import { groupRoutes } from "./http/controllers/group/routes";
 import { lessonRoutes } from "./http/controllers/lesson/routes";
 import { favoriteCourseRoutes } from "./http/controllers/favorite-course/routes";
 import { certificateRoutes } from "./http/controllers/certificate/routes";
+import { verifyCertificate } from "./http/controllers/certificate/verify.controller";
 import { env } from "./env/index";
 
 export const app = fastify();
@@ -49,6 +51,18 @@ app.register(fastifyJwt, {
   sign: {
     expiresIn: "10m",
   },
+});
+
+// Rota pública para verificação de certificados (para recrutadores)
+// Deve ser registrada ANTES do plugin de certificados para não passar pelo hook de autenticação
+// Rate limiting aplicado para prevenir ataques de enumeração e brute force
+app.register(async function (fastify) {
+  await fastify.register(fastifyRateLimit, {
+    max: 50, // Limite: 50 requisições por minuto por IP
+    timeWindow: 60 * 1000, // 1 minuto em milissegundos (para versão 9.x)
+  });
+
+  fastify.get("/certificates/verify/:id", verifyCertificate);
 });
 
 app.register(usersRoutes);
