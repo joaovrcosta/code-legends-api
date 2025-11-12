@@ -4,6 +4,7 @@ import { makeCreateCertificateUseCase } from "../../../utils/factories/make-crea
 import { CertificateAlreadyExistsError } from "../../../use-cases/errors/certificate-already-exists";
 import { CourseNotFoundError } from "../../../use-cases/errors/course-not-found";
 import { UserNotFoundError } from "../../../use-cases/errors/user-not-found";
+import { CourseNotCompletedError } from "../../../use-cases/errors/course-not-completed";
 
 export async function createCertificate(
   request: FastifyRequest,
@@ -33,6 +34,10 @@ export async function createCertificate(
   } catch (error) {
     if (error instanceof CertificateAlreadyExistsError) {
       return reply.status(409).send({ message: error.message });
+    }
+
+    if (error instanceof CourseNotCompletedError) {
+      return reply.status(400).send({ message: error.message });
     }
 
     if (error instanceof CourseNotFoundError) {

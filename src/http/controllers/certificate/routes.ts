@@ -16,11 +16,8 @@ export async function certificateRoutes(app: FastifyInstance) {
   // Buscar certificado por ID
   app.get("/certificates/:id", getCertificateById);
 
-  // Criar certificado (apenas instrutores e admins)
-  app.post("/certificates", {
-    onRequest: [verifyInstructorOrAdmin],
-    handler: createCertificate,
-  });
+  // Criar certificado - usuários podem gerar seus próprios certificados quando completarem o curso
+  app.post("/certificates", createCertificate);
 
   // Deletar certificado (apenas instrutores e admins)
   app.delete("/certificates/:id", {

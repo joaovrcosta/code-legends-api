@@ -11,6 +11,7 @@ import { enroll } from "./enroll.controller";
 import { getRoadmap } from "./get-roadmap.controller";
 import { continueCourse } from "./continue.controller";
 import { listEnrolled } from "./list-enrolled.controller";
+import { listCompleted } from "./list-completed.controller";
 import { start } from "./start.controller";
 import { getActive } from "./get-active.controller";
 import { myLearning } from "./my-learning.controller";
@@ -41,6 +42,7 @@ export async function courseRoutes(app: FastifyInstance) {
   app.get("/courses/:id/continue", { onRequest: [verifyJWT] }, continueCourse);
   app.get("/courses/continue", { onRequest: [verifyJWT] }, continueCourse); // Sem ID: usa curso ativo
   app.get("/courses/enrolled", { onRequest: [verifyJWT] }, listEnrolled);
+  app.get("/courses/completed", { onRequest: [verifyJWT] }, listCompleted);
   app.get("/account/active-course", { onRequest: [verifyJWT] }, getActive);
   app.get("/my-learning", { onRequest: [verifyJWT] }, myLearning);
 }
