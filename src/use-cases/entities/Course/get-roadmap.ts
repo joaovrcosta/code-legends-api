@@ -45,6 +45,11 @@ interface GetRoadmapResponse {
     slug: string;
     progress: number;
     isCompleted: boolean;
+    author: {
+      name: string;
+    };
+    currentModule: number | null;
+    currentClass: number | null;
   };
   modules: RoadmapModule[];
 }
@@ -93,6 +98,8 @@ export class GetRoadmapUseCase {
         id: "asc",
       },
     });
+
+    console.log(modules);
 
     // Buscar todos os progressos do usuário neste curso
     const userProgresses = userCourse?.id
@@ -233,6 +240,48 @@ export class GetRoadmapUseCase {
     const courseProgress =
       totalLessons > 0 ? completedLessons / totalLessons : 0;
 
+    // Calcular módulo atual (índice + 1, começando em 1)
+    let currentModule: number | null = null;
+
+    // Primeiro, tentar usar o currentModuleId do userCourse
+    if (userCourse?.currentModuleId) {
+      const moduleIndex = modules.findIndex(
+        (m) => m.id === userCourse.currentModuleId
+      );
+      if (moduleIndex >= 0) {
+        currentModule = moduleIndex + 1;
+      }
+    }
+
+    // Se não encontrou pelo currentModuleId, tentar determinar pelo currentTaskId
+    if (!currentModule && validCurrentTaskId) {
+      // Encontrar em qual módulo está a aula atual
+      for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+        const module = modules[moduleIndex];
+        const hasLesson = module.groups.some((group) =>
+          group.lessons.some((lesson) => lesson.id === validCurrentTaskId)
+        );
+        if (hasLesson) {
+          currentModule = moduleIndex + 1;
+          break;
+        }
+      }
+    }
+
+    // Calcular aula atual (índice na lista ordenada + 1, começando em 1)
+    let currentClass: number | null = null;
+    if (validCurrentTaskId) {
+      const classIndex = allLessons.findIndex(
+        (l) => l.id === validCurrentTaskId
+      );
+      currentClass = classIndex >= 0 ? classIndex + 1 : null;
+    }
+
+    // Type assertion necessário porque o Prisma retorna Course com includes
+    const courseWithInstructor = course as typeof course & {
+      instructor?: { name: string };
+    };
+
     return {
       course: {
         id: course.id,
@@ -240,6 +289,11 @@ export class GetRoadmapUseCase {
         slug: course.slug,
         progress: courseProgress,
         isCompleted: userCourse?.isCompleted ?? false,
+        author: {
+          name: courseWithInstructor.instructor?.name ?? "",
+        },
+        currentModule,
+        currentClass,
       },
       modules: roadmapModules,
     };
