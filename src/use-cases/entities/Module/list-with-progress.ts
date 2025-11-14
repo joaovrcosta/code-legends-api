@@ -111,8 +111,9 @@ export class ListModulesWithProgressUseCase {
           // Se não há módulo atual definido, apenas o primeiro está desbloqueado
           locked = index > 0;
         } else if (index < currentModuleIndex) {
-          // Módulos anteriores ao atual estão sempre desbloqueados
-          locked = false;
+          // Módulos anteriores ao atual: só desbloqueados se estiverem 100% concluídos
+          const isCompleted = progress === 100;
+          locked = !isCompleted;
         } else if (index === currentModuleIndex) {
           // O módulo atual nunca está bloqueado
           locked = false;
