@@ -157,82 +157,145 @@ export class GetRoadmapUseCase {
         ? currentTaskId
         : allLessons[0]?.id ?? null;
 
-    // Construir o roadmap
-    const roadmapModules: RoadmapModule[] = modules.map((module) => {
-      // Calcular progresso do módulo em tempo real
-      const moduleLessons: Array<{ id: number }> = [];
-      module.groups.forEach((group) => {
-        group.lessons.forEach((lesson) => {
-          moduleLessons.push({ id: lesson.id });
+    // Identificar o módulo atual
+    let currentModuleId: string | null = null;
+
+    // Primeiro, tentar usar o currentModuleId do userCourse
+    if (userCourse?.currentModuleId) {
+      const moduleExists = modules.some(
+        (m) => m.id === userCourse.currentModuleId
+      );
+      if (moduleExists) {
+        currentModuleId = userCourse.currentModuleId;
+      }
+    }
+
+    // Se não encontrou pelo currentModuleId, tentar determinar pelo currentTaskId
+    if (!currentModuleId && validCurrentTaskId) {
+      // Encontrar em qual módulo está a aula atual
+      for (const module of modules) {
+        const hasLesson = module.groups.some((group) =>
+          group.lessons.some((lesson) => lesson.id === validCurrentTaskId)
+        );
+        if (hasLesson) {
+          currentModuleId = module.id;
+          break;
+        }
+      }
+    }
+
+    // Se ainda não encontrou, usar o primeiro módulo
+    if (!currentModuleId && modules.length > 0) {
+      currentModuleId = modules[0].id;
+    }
+
+    // Filtrar apenas o módulo atual
+    const currentModule = modules.find((m) => m.id === currentModuleId);
+
+    if (!currentModule) {
+      // Se não encontrou módulo atual, retornar array vazio
+      return {
+        course: {
+          id: course.id,
+          title: course.title,
+          slug: course.slug,
+          progress: 0,
+          isCompleted: false,
+          author: {
+            name: (course as typeof course & { instructor?: { name: string } })
+              .instructor?.name ?? "",
+          },
+          currentModule: null,
+          currentClass: null,
+        },
+        modules: [],
+      };
+    }
+
+    // Construir o roadmap apenas para o módulo atual
+    const roadmapModules: RoadmapModule[] = [
+      (() => {
+        // Calcular progresso do módulo em tempo real
+        const moduleLessons: Array<{ id: number }> = [];
+        currentModule.groups.forEach((group) => {
+          group.lessons.forEach((lesson) => {
+            moduleLessons.push({ id: lesson.id });
+          });
         });
-      });
 
-      const totalModuleLessons = moduleLessons.length;
-      const completedModuleLessons = userProgresses.filter((p) => {
-        return p.isCompleted && moduleLessons.some((l) => l.id === p.taskId);
-      }).length;
+        const totalModuleLessons = moduleLessons.length;
+        const completedModuleLessons = userProgresses.filter((p) => {
+          return p.isCompleted && moduleLessons.some((l) => l.id === p.taskId);
+        }).length;
 
-      const moduleProgressValue =
-        totalModuleLessons > 0
-          ? completedModuleLessons / totalModuleLessons
-          : 0;
-      const moduleCompleted = completedModuleLessons === totalModuleLessons;
+        const moduleProgressValue =
+          totalModuleLessons > 0
+            ? completedModuleLessons / totalModuleLessons
+            : 0;
+        const moduleCompleted = completedModuleLessons === totalModuleLessons;
 
-      const roadmapGroups: RoadmapGroup[] = module.groups.map((group) => {
-        const roadmapLessons: RoadmapLesson[] = group.lessons.map((lesson) => {
-          const isCompleted = progressMap.get(lesson.id) ?? false;
-          const lessonIndex = allLessons.findIndex((l) => l.id === lesson.id);
+        const roadmapGroups: RoadmapGroup[] = currentModule.groups.map(
+          (group) => {
+            const roadmapLessons: RoadmapLesson[] = group.lessons.map(
+              (lesson) => {
+                const isCompleted = progressMap.get(lesson.id) ?? false;
+                const lessonIndex = allLessons.findIndex(
+                  (l) => l.id === lesson.id
+                );
 
-          // Determinar status
-          let status: "locked" | "unlocked" | "completed";
-          if (isCompleted) {
-            status = "completed";
-          } else if (lessonIndex === 0) {
-            status = "unlocked"; // Primeira aula sempre desbloqueada
-          } else {
-            // Verificar se a aula anterior foi concluída
-            const previousLesson = allLessons[lessonIndex - 1];
-            const previousCompleted =
-              progressMap.get(previousLesson.id) ?? false;
-            status = previousCompleted ? "unlocked" : "locked";
+                // Determinar status
+                let status: "locked" | "unlocked" | "completed";
+                if (isCompleted) {
+                  status = "completed";
+                } else if (lessonIndex === 0) {
+                  status = "unlocked"; // Primeira aula sempre desbloqueada
+                } else {
+                  // Verificar se a aula anterior foi concluída
+                  const previousLesson = allLessons[lessonIndex - 1];
+                  const previousCompleted =
+                    progressMap.get(previousLesson.id) ?? false;
+                  status = previousCompleted ? "unlocked" : "locked";
+                }
+
+                const isCurrent = lesson.id === validCurrentTaskId;
+
+                // Pode revisar se a aula foi concluída
+                const canReview = isCompleted;
+
+                return {
+                  id: lesson.id,
+                  title: lesson.title,
+                  slug: lesson.slug,
+                  description: lesson.description,
+                  type: lesson.type,
+                  video_url: lesson.video_url,
+                  video_duration: lesson.video_duration,
+                  order: lesson.order,
+                  status,
+                  isCurrent,
+                  canReview,
+                };
+              }
+            );
+
+            return {
+              id: group.id,
+              title: group.title,
+              lessons: roadmapLessons,
+            };
           }
-
-          const isCurrent = lesson.id === validCurrentTaskId;
-
-          // Pode revisar se a aula foi concluída
-          const canReview = isCompleted;
-
-          return {
-            id: lesson.id,
-            title: lesson.title,
-            slug: lesson.slug,
-            description: lesson.description,
-            type: lesson.type,
-            video_url: lesson.video_url,
-            video_duration: lesson.video_duration,
-            order: lesson.order,
-            status,
-            isCurrent,
-            canReview,
-          };
-        });
+        );
 
         return {
-          id: group.id,
-          title: group.title,
-          lessons: roadmapLessons,
+          id: currentModule.id,
+          title: currentModule.title,
+          slug: currentModule.slug,
+          groups: roadmapGroups,
+          progress: moduleProgressValue,
+          isCompleted: moduleCompleted,
         };
-      });
-
-      return {
-        id: module.id,
-        title: module.title,
-        slug: module.slug,
-        groups: roadmapGroups,
-        progress: moduleProgressValue,
-        isCompleted: moduleCompleted,
-      };
-    });
+      })(),
+    ];
 
     // Calcular progresso geral do curso
     const totalLessons = allLessons.length;
@@ -241,30 +304,12 @@ export class GetRoadmapUseCase {
       totalLessons > 0 ? completedLessons / totalLessons : 0;
 
     // Calcular módulo atual (índice + 1, começando em 1)
-    let currentModule: number | null = null;
+    let currentModuleIndex: number | null = null;
 
-    // Primeiro, tentar usar o currentModuleId do userCourse
-    if (userCourse?.currentModuleId) {
-      const moduleIndex = modules.findIndex(
-        (m) => m.id === userCourse.currentModuleId
-      );
+    if (currentModuleId) {
+      const moduleIndex = modules.findIndex((m) => m.id === currentModuleId);
       if (moduleIndex >= 0) {
-        currentModule = moduleIndex + 1;
-      }
-    }
-
-    // Se não encontrou pelo currentModuleId, tentar determinar pelo currentTaskId
-    if (!currentModule && validCurrentTaskId) {
-      // Encontrar em qual módulo está a aula atual
-      for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
-        const module = modules[moduleIndex];
-        const hasLesson = module.groups.some((group) =>
-          group.lessons.some((lesson) => lesson.id === validCurrentTaskId)
-        );
-        if (hasLesson) {
-          currentModule = moduleIndex + 1;
-          break;
-        }
+        currentModuleIndex = moduleIndex + 1;
       }
     }
 
@@ -292,7 +337,7 @@ export class GetRoadmapUseCase {
         author: {
           name: courseWithInstructor.instructor?.name ?? "",
         },
-        currentModule,
+        currentModule: currentModuleIndex,
         currentClass,
       },
       modules: roadmapModules,
