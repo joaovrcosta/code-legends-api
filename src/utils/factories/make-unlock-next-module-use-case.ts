@@ -1,22 +1,19 @@
 import { PrismaUserCourseRepository } from "../../repositories/prisma/prisma-user-course-repository";
-import { PrismaModuleRepository } from "../../repositories/prisma/prisma-module-repository";
 import { PrismaCourseRepository } from "../../repositories/prisma/prisma-course-repository";
 import { PrismaUserProgressRepository } from "../../repositories/prisma/prisma-user-progress-repository";
-import { UpdateCurrentModuleUseCase } from "../../use-cases/entities/Module/update-current";
+import { UnlockNextModuleUseCase } from "../../use-cases/entities/Module/unlock-next-module";
 
-export function makeUpdateCurrentModuleUseCase() {
+export function makeUnlockNextModuleUseCase() {
   const userCourseRepository = new PrismaUserCourseRepository();
-  const moduleRepository = new PrismaModuleRepository();
   const courseRepository = new PrismaCourseRepository();
   const userProgressRepository = new PrismaUserProgressRepository();
 
-  const updateCurrentModuleUseCase = new UpdateCurrentModuleUseCase(
+  const unlockNextModuleUseCase = new UnlockNextModuleUseCase(
     userCourseRepository,
-    moduleRepository,
     courseRepository,
     userProgressRepository
   );
 
-  return updateCurrentModuleUseCase;
+  return unlockNextModuleUseCase;
 }
 

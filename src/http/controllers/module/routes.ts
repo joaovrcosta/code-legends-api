@@ -3,6 +3,7 @@ import { create } from "./create.controller";
 import { list } from "./list.controller";
 import { listWithProgress } from "./list-with-progress.controller";
 import { updateCurrent } from "./update-current.controller";
+import { unlockNextModule } from "./unlock-next-module.controller";
 import { getBySlug } from "./get-by-slug.controller";
 import { update } from "./update.controller";
 import { remove } from "./delete.controller";
@@ -22,6 +23,11 @@ export async function moduleRoutes(app: FastifyInstance) {
     "/courses/:courseId/modules/:moduleId/current",
     { onRequest: [verifyJWT] },
     updateCurrent
+  );
+  app.post(
+    "/courses/:courseId/modules/unlock-next",
+    { onRequest: [verifyJWT] },
+    unlockNextModule
   );
   app.get("/courses/:courseId/modules", list);
   app.post(

@@ -39,7 +39,8 @@ export async function updateCurrent(
     if (
       error instanceof Error &&
       (error.message === "User is not enrolled in this course" ||
-        error.message === "Module does not belong to this course")
+        error.message === "Module does not belong to this course" ||
+        error.message === "Module is locked. Complete the previous module first.")
     ) {
       return reply.status(403).send({ message: error.message });
     }

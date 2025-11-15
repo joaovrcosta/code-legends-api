@@ -194,14 +194,32 @@ export class CompleteLessonUseCase {
         },
       });
 
-      await this.userCourseRepository.update(userCourse.id, {
-        currentTaskId: nextLessonId ?? null,
-        currentModuleId:
-          nextLessonGroup?.moduleId ?? userCourse.currentModuleId ?? null,
-        progress: courseProgress,
-        isCompleted: courseCompleted,
-        completedAt: courseCompleted ? new Date() : null,
-      });
+      // Verificar se a próxima lesson está em outro módulo
+      const nextModuleId = nextLessonGroup?.moduleId;
+      const currentModuleId = group.moduleId;
+
+      // Se a próxima lesson está em outro módulo, NÃO avançar automaticamente
+      // O usuário deve usar o botão "Desbloquear próximo módulo" para avançar
+      if (nextModuleId && nextModuleId !== currentModuleId) {
+        // Não pode avançar para o próximo módulo automaticamente
+        // Manter no módulo atual e usar a lesson atual (completada) como currentTaskId
+        await this.userCourseRepository.update(userCourse.id, {
+          currentTaskId: lessonId,
+          currentModuleId: userCourse.currentModuleId ?? currentModuleId,
+          progress: courseProgress,
+          isCompleted: courseCompleted,
+          completedAt: courseCompleted ? new Date() : null,
+        });
+      } else {
+        // A próxima lesson está no mesmo módulo, pode avançar normalmente
+        await this.userCourseRepository.update(userCourse.id, {
+          currentTaskId: nextLessonId,
+          currentModuleId: userCourse.currentModuleId ?? currentModuleId,
+          progress: courseProgress,
+          isCompleted: courseCompleted,
+          completedAt: courseCompleted ? new Date() : null,
+        });
+      }
     } else {
       await this.userCourseRepository.update(userCourse.id, {
         currentTaskId: null,

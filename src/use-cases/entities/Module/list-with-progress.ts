@@ -151,31 +151,17 @@ export class ListModulesWithProgressUseCase {
           // Se não há módulo atual definido, apenas o primeiro está desbloqueado
           locked = index > 0;
         } else if (index < currentModuleIndex) {
-          // Módulos anteriores ao atual: só desbloqueados se estiverem 100% concluídos
+          // Módulos anteriores ao atual: desbloqueados se estiverem 100% completos (para revisão)
           const isCompleted = progress === 100;
           locked = !isCompleted;
         } else if (index === currentModuleIndex) {
           // O módulo atual nunca está bloqueado
           locked = false;
         } else {
-          // Módulos depois do atual: verificar se o módulo atual está 100% concluído
-          const currentModule = modules[currentModuleIndex];
-          const currentModuleTotalLessons = currentModule.groups.reduce(
-            (acc, group) => acc + group.lessons.length,
-            0
-          );
-          const currentModuleCompletedLessons =
-            await this.userProgressRepository.countCompletedInModule(
-              userId,
-              currentModule.id
-            );
-          const currentModuleProgress =
-            currentModuleTotalLessons > 0
-              ? currentModuleCompletedLessons / currentModuleTotalLessons
-              : 0;
-
-          // Só desbloqueia se o módulo atual estiver 100% concluído
-          locked = currentModuleProgress < 1;
+          // Módulos depois do atual: sempre bloqueados até que sejam desbloqueados manualmente
+          // O próximo módulo só fica desbloqueado quando o usuário usar o botão "Desbloquear próximo módulo"
+          // que atualiza o currentModuleId para o próximo módulo
+          locked = true;
         }
 
         return {
