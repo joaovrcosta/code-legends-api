@@ -27,6 +27,7 @@ interface ListModulesWithProgressRequest {
 
 interface ListModulesWithProgressResponse {
   modules: ModuleWithProgress[];
+  nextModule: ModuleWithProgress | null;
 }
 
 export class ListModulesWithProgressUseCase {
@@ -215,8 +216,15 @@ export class ListModulesWithProgressUseCase {
       })
     );
 
+    // Encontrar o próximo módulo ao atual
+    let nextModule: ModuleWithProgress | null = null;
+    if (currentModuleIndex >= 0 && currentModuleIndex < modules.length - 1) {
+      nextModule = modulesWithProgress[currentModuleIndex + 1] || null;
+    }
+
     return {
       modules: modulesWithProgress,
+      nextModule,
     };
   }
 }

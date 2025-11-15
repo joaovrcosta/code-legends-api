@@ -24,13 +24,13 @@ export async function listWithProgress(
   try {
     const listModulesWithProgressUseCase = makeListModulesWithProgressUseCase();
 
-    const { modules } = await listModulesWithProgressUseCase.execute({
+    const { modules, nextModule } = await listModulesWithProgressUseCase.execute({
       userId: request.user.id,
       courseId,
       slug,
     });
 
-    return reply.status(200).send({ modules });
+    return reply.status(200).send({ modules, nextModule });
   } catch (error) {
     if (error instanceof CourseNotFoundError) {
       return reply.status(404).send({ message: error.message });
