@@ -1,6 +1,7 @@
 import { IUserCourseRepository } from "../../../repositories/user-course-repository";
 import { ICourseRepository } from "../../../repositories/course-repository";
 import { IUserProgressRepository } from "../../../repositories/user-progress-repository";
+import { IUnlockedModuleRepository } from "../../../repositories/unlocked-module-repository";
 import { prisma } from "../../../lib/prisma";
 import { CourseNotFoundError } from "../../errors/course-not-found";
 
@@ -22,7 +23,8 @@ export class UnlockNextModuleUseCase {
   constructor(
     private userCourseRepository: IUserCourseRepository,
     private courseRepository: ICourseRepository,
-    private userProgressRepository: IUserProgressRepository
+    private userProgressRepository: IUserProgressRepository,
+    private unlockedModuleRepository: IUnlockedModuleRepository
   ) {}
 
   async execute({
@@ -129,6 +131,21 @@ export class UnlockNextModuleUseCase {
     const nextModule = allModules[currentModuleIndex + 1];
     const nextModuleFirstGroup = nextModule.groups[0];
     const nextModuleFirstLesson = nextModuleFirstGroup?.lessons[0];
+
+    // Salvar o módulo desbloqueado no banco de dados
+    const existingUnlock = await this.unlockedModuleRepository.findByUserAndModule(
+      userId,
+      nextModule.id,
+      userCourse.id
+    );
+
+    if (!existingUnlock) {
+      await this.unlockedModuleRepository.create({
+        userId,
+        moduleId: nextModule.id,
+        userCourseId: userCourse.id,
+      });
+    }
 
     const updatedUserCourse = await this.userCourseRepository.update(
       userCourse.id,

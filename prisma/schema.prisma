@@ -61,6 +61,7 @@ model Module {
   course             Course               @relation(fields: [courseId], references: [id])
   userCourses        UserCourse[]
   userModuleProgress UserModuleProgress[]
+  unlockedModules    UnlockedModule[]
 }
 
 model Group {
@@ -152,6 +153,7 @@ model UserCourse {
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   userModuleProgress UserModuleProgress[]
   userProgress       UserProgress[]
+  unlockedModules    UnlockedModule[]
 
   @@unique([userId, courseId])
 }
@@ -193,6 +195,18 @@ model UserModuleProgress {
   userCourse     UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, moduleId])
+}
+
+model UnlockedModule {
+  id           String   @id @default(cuid())
+  userId       String
+  moduleId     String
+  userCourseId String
+  unlockedAt   DateTime @default(now())
+  module       Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userCourse   UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId, userCourseId])
 }
 
 model Address {

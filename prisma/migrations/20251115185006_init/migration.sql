@@ -169,6 +169,17 @@ CREATE TABLE "UserModuleProgress" (
 );
 
 -- CreateTable
+CREATE TABLE "UnlockedModule" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "moduleId" TEXT NOT NULL,
+    "userCourseId" TEXT NOT NULL,
+    "unlockedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UnlockedModule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Address" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -250,6 +261,9 @@ CREATE UNIQUE INDEX "UserProgress_userId_taskId_key" ON "UserProgress"("userId",
 CREATE UNIQUE INDEX "UserModuleProgress_userId_moduleId_key" ON "UserModuleProgress"("userId", "moduleId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "UnlockedModule_userId_moduleId_userCourseId_key" ON "UnlockedModule"("userId", "moduleId", "userCourseId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Address_userId_key" ON "Address"("userId");
 
 -- CreateIndex
@@ -302,6 +316,12 @@ ALTER TABLE "UserModuleProgress" ADD CONSTRAINT "UserModuleProgress_moduleId_fke
 
 -- AddForeignKey
 ALTER TABLE "UserModuleProgress" ADD CONSTRAINT "UserModuleProgress_userCourseId_fkey" FOREIGN KEY ("userCourseId") REFERENCES "UserCourse"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UnlockedModule" ADD CONSTRAINT "UnlockedModule_moduleId_fkey" FOREIGN KEY ("moduleId") REFERENCES "Module"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UnlockedModule" ADD CONSTRAINT "UnlockedModule_userCourseId_fkey" FOREIGN KEY ("userCourseId") REFERENCES "UserCourse"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Address" ADD CONSTRAINT "Address_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

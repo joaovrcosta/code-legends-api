@@ -66,6 +66,17 @@ export class ResetProgressUseCase {
       },
     });
 
+    // Deletar todos os módulos desbloqueados (UnlockedModule) do curso específico
+    await prisma.unlockedModule.deleteMany({
+      where: {
+        userId,
+        userCourseId: userCourse.id,
+        module: {
+          courseId: courseId,
+        },
+      },
+    });
+
     // Buscar o primeiro módulo e primeira lesson do curso para resetar
     const courseWithModules = await prisma.course.findUnique({
       where: { id: courseId },

@@ -2,6 +2,7 @@ import { IModuleRepository } from "../../../repositories/module-repository";
 import { IUserCourseRepository } from "../../../repositories/user-course-repository";
 import { IUserProgressRepository } from "../../../repositories/user-progress-repository";
 import { ICourseRepository } from "../../../repositories/course-repository";
+import { IUnlockedModuleRepository } from "../../../repositories/unlocked-module-repository";
 import { prisma } from "../../../lib/prisma";
 import { CourseNotFoundError } from "../../errors/course-not-found";
 
@@ -15,6 +16,7 @@ interface ModuleWithProgress {
   totalLessons: number; // Quantidade total de lessons no módulo
   completedLessons: number; // Quantidade de lessons completadas pelo aluno
   locked: boolean; // Se o módulo está bloqueado
+  canUnlock: boolean; // Se pode desbloquear o próximo módulo (apenas no módulo atual quando está 100% completo)
 }
 
 interface ListModulesWithProgressRequest {
@@ -32,7 +34,8 @@ export class ListModulesWithProgressUseCase {
     private moduleRepository: IModuleRepository,
     private userCourseRepository: IUserCourseRepository,
     private userProgressRepository: IUserProgressRepository,
-    private courseRepository: ICourseRepository
+    private courseRepository: ICourseRepository,
+    private unlockedModuleRepository: IUnlockedModuleRepository
   ) {}
 
   async execute({
@@ -111,6 +114,13 @@ export class ListModulesWithProgressUseCase {
 
     const hasProgress = totalCompletedLessonsInCourse > 0;
 
+    // Buscar todos os módulos desbloqueados pelo usuário neste curso
+    const unlockedModules = await this.unlockedModuleRepository.findByUserAndCourse(
+      userId,
+      finalCourseId
+    );
+    const unlockedModuleIds = new Set(unlockedModules.map((um) => um.moduleId));
+
     // Encontrar o índice do módulo atual
     const currentModuleIndex = userCourse.currentModuleId
       ? modules.findIndex((m) => m.id === userCourse.currentModuleId)
@@ -141,6 +151,32 @@ export class ListModulesWithProgressUseCase {
         // Verificar se é o módulo atual
         const isCurrent = userCourse.currentModuleId === module.id;
 
+        // Verificar se é o próximo módulo ao atual
+        const isNextModule = currentModuleIndex >= 0 && index === currentModuleIndex + 1;
+
+        // Verificar se o módulo atual está completo
+        let canUnlock = false;
+        if (currentModuleIndex >= 0) {
+          const currentModule = modules[currentModuleIndex];
+          const currentModuleTotalLessons = currentModule.groups.reduce(
+            (acc, group) => acc + group.lessons.length,
+            0
+          );
+          const currentModuleCompletedLessons =
+            await this.userProgressRepository.countCompletedInModule(
+              userId,
+              currentModule.id
+            );
+          const isCurrentModuleCompleted = currentModuleCompletedLessons === currentModuleTotalLessons && currentModuleTotalLessons > 0;
+          
+          // O módulo atual e o próximo módulo têm canUnlock: true quando o atual está completo
+          if (isCurrent && isCurrentModuleCompleted && index < modules.length - 1) {
+            canUnlock = true;
+          } else if (isNextModule && isCurrentModuleCompleted) {
+            canUnlock = true;
+          }
+        }
+
         // Determinar se o módulo está bloqueado
         let locked = false;
 
@@ -158,10 +194,10 @@ export class ListModulesWithProgressUseCase {
           // O módulo atual nunca está bloqueado
           locked = false;
         } else {
-          // Módulos depois do atual: sempre bloqueados até que sejam desbloqueados manualmente
-          // O próximo módulo só fica desbloqueado quando o usuário usar o botão "Desbloquear próximo módulo"
-          // que atualiza o currentModuleId para o próximo módulo
-          locked = true;
+          // Módulos depois do atual: verificar se foram desbloqueados manualmente
+          // Se o módulo foi desbloqueado anteriormente, permanece desbloqueado
+          const isUnlocked = unlockedModuleIds.has(module.id);
+          locked = !isUnlocked;
         }
 
         return {
@@ -174,6 +210,7 @@ export class ListModulesWithProgressUseCase {
           totalLessons,
           completedLessons,
           locked,
+          canUnlock,
         };
       })
     );

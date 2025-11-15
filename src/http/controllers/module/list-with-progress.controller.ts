@@ -43,6 +43,12 @@ export async function listWithProgress(
       return reply.status(403).send({ message: error.message });
     }
 
-    return reply.status(500).send({ message: "Internal server error" });
+    // Log do erro para debug
+    console.error("Erro ao listar módulos com progresso:", error);
+    
+    return reply.status(500).send({ 
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 }
