@@ -1,6 +1,7 @@
 import { IModuleRepository } from "../../../repositories/module-repository";
 import { IUserCourseRepository } from "../../../repositories/user-course-repository";
 import { IUserProgressRepository } from "../../../repositories/user-progress-repository";
+import { ICourseRepository } from "../../../repositories/course-repository";
 import { prisma } from "../../../lib/prisma";
 import { CourseNotFoundError } from "../../errors/course-not-found";
 
@@ -18,7 +19,8 @@ interface ModuleWithProgress {
 
 interface ListModulesWithProgressRequest {
   userId: string;
-  courseId: string;
+  courseId?: string;
+  slug?: string;
 }
 
 interface ListModulesWithProgressResponse {
@@ -29,26 +31,43 @@ export class ListModulesWithProgressUseCase {
   constructor(
     private moduleRepository: IModuleRepository,
     private userCourseRepository: IUserCourseRepository,
-    private userProgressRepository: IUserProgressRepository
+    private userProgressRepository: IUserProgressRepository,
+    private courseRepository: ICourseRepository
   ) {}
 
   async execute({
     userId,
     courseId,
+    slug,
   }: ListModulesWithProgressRequest): Promise<ListModulesWithProgressResponse> {
-    // Verificar se o curso existe
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-    });
-
-    if (!course) {
+    // Se slug foi fornecido, buscar o curso pelo slug
+    let finalCourseId = courseId;
+    
+    if (slug && !courseId) {
+      const course = await this.courseRepository.findBySlug(slug);
+      
+      if (!course) {
+        throw new CourseNotFoundError();
+      }
+      
+      finalCourseId = course.id;
+    } else if (!courseId) {
       throw new CourseNotFoundError();
+    } else {
+      // Se courseId foi fornecido, verificar se o curso existe
+      const course = await prisma.course.findUnique({
+        where: { id: finalCourseId },
+      });
+
+      if (!course) {
+        throw new CourseNotFoundError();
+      }
     }
 
     // Verificar se o usuário está inscrito no curso
     const userCourse = await this.userCourseRepository.findByUserAndCourse(
       userId,
-      courseId
+      finalCourseId
     );
 
     if (!userCourse) {
@@ -57,7 +76,7 @@ export class ListModulesWithProgressUseCase {
 
     // Buscar todos os módulos do curso com seus groups e lessons
     const modules = await prisma.module.findMany({
-      where: { courseId },
+      where: { courseId: finalCourseId },
       include: {
         groups: {
           include: {
@@ -73,6 +92,24 @@ export class ListModulesWithProgressUseCase {
         id: "asc",
       },
     });
+
+    // Verificar se há progresso no curso (alguma lesson completada)
+    const totalCompletedLessonsInCourse = await prisma.userProgress.count({
+      where: {
+        userId,
+        userCourseId: userCourse.id,
+        isCompleted: true,
+        task: {
+          submodule: {
+            module: {
+              courseId: finalCourseId,
+            },
+          },
+        },
+      },
+    });
+
+    const hasProgress = totalCompletedLessonsInCourse > 0;
 
     // Encontrar o índice do módulo atual
     const currentModuleIndex = userCourse.currentModuleId
@@ -107,7 +144,10 @@ export class ListModulesWithProgressUseCase {
         // Determinar se o módulo está bloqueado
         let locked = false;
 
-        if (currentModuleIndex === -1) {
+        // Se não há progresso no curso, apenas o primeiro módulo está desbloqueado
+        if (!hasProgress) {
+          locked = index > 0;
+        } else if (currentModuleIndex === -1) {
           // Se não há módulo atual definido, apenas o primeiro está desbloqueado
           locked = index > 0;
         } else if (index < currentModuleIndex) {

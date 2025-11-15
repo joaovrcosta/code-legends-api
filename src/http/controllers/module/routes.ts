@@ -14,7 +14,7 @@ export async function moduleRoutes(app: FastifyInstance) {
   // Rotas aninhadas em courses
   // IMPORTANTE: Rotas mais específicas devem vir ANTES das genéricas
   app.get(
-    "/courses/:courseId/modules/with-progress",
+    "/courses/:courseIdentifier/modules/with-progress",
     { onRequest: [verifyJWT] },
     listWithProgress
   );

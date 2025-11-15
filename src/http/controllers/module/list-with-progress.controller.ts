@@ -8,10 +8,18 @@ export async function listWithProgress(
   reply: FastifyReply
 ) {
   const listModulesParamsSchema = z.object({
-    courseId: z.string(),
+    courseIdentifier: z.string(),
   });
 
-  const { courseId } = listModulesParamsSchema.parse(request.params);
+  const { courseIdentifier } = listModulesParamsSchema.parse(request.params);
+
+  const isUUID =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      courseIdentifier
+    );
+
+  const courseId = isUUID ? courseIdentifier : undefined;
+  const slug = isUUID ? undefined : courseIdentifier;
 
   try {
     const listModulesWithProgressUseCase = makeListModulesWithProgressUseCase();
@@ -19,6 +27,7 @@ export async function listWithProgress(
     const { modules } = await listModulesWithProgressUseCase.execute({
       userId: request.user.id,
       courseId,
+      slug,
     });
 
     return reply.status(200).send({ modules });
@@ -27,11 +36,13 @@ export async function listWithProgress(
       return reply.status(404).send({ message: error.message });
     }
 
-    if (error instanceof Error && error.message === "User is not enrolled in this course") {
+    if (
+      error instanceof Error &&
+      error.message === "User is not enrolled in this course"
+    ) {
       return reply.status(403).send({ message: error.message });
     }
 
     return reply.status(500).send({ message: "Internal server error" });
   }
 }
-
