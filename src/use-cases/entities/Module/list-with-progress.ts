@@ -12,7 +12,8 @@ interface ModuleWithProgress {
   slug: string;
   courseId: string;
   progress: number; // Porcentagem de completamento (0-100)
-  isCurrent: boolean; // Se é o módulo atual do aluno
+  isCurrent: boolean; // Se é o módulo atual do aluno (para completar)
+  active: boolean; // Se é o módulo que o usuário está visualizando no momento
   totalLessons: number; // Quantidade total de lessons no módulo
   completedLessons: number; // Quantidade de lessons completadas pelo aluno
   locked: boolean; // Se o módulo está bloqueado
@@ -45,7 +46,7 @@ export class ListModulesWithProgressUseCase {
     slug,
   }: ListModulesWithProgressRequest): Promise<ListModulesWithProgressResponse> {
     // Se slug foi fornecido, buscar o curso pelo slug
-    let finalCourseId = courseId;
+    let finalCourseId: string;
     
     if (slug && !courseId) {
       const course = await this.courseRepository.findBySlug(slug);
@@ -60,12 +61,14 @@ export class ListModulesWithProgressUseCase {
     } else {
       // Se courseId foi fornecido, verificar se o curso existe
       const course = await prisma.course.findUnique({
-        where: { id: finalCourseId },
+        where: { id: courseId },
       });
 
       if (!course) {
         throw new CourseNotFoundError();
       }
+
+      finalCourseId = courseId;
     }
 
     // Verificar se o usuário está inscrito no curso
@@ -122,10 +125,57 @@ export class ListModulesWithProgressUseCase {
     );
     const unlockedModuleIds = new Set(unlockedModules.map((um) => um.moduleId));
 
-    // Encontrar o índice do módulo atual
-    const currentModuleIndex = userCourse.currentModuleId
-      ? modules.findIndex((m) => m.id === userCourse.currentModuleId)
-      : -1;
+    // Encontrar o índice do módulo atual (para completar)
+    // O módulo atual é aquele que o aluno está trabalhando para completar
+    // Pode ser diferente do módulo que ele está visualizando (active)
+    let currentModuleIndex = -1;
+    let currentModuleIdForCompletion: string | null = null;
+    
+    // Determinar qual módulo o aluno está trabalhando para completar
+    // Isso é baseado no primeiro módulo desbloqueado que não está 100% completo
+    // O primeiro módulo sempre está desbloqueado
+    for (let i = 0; i < modules.length; i++) {
+      const module = modules[i];
+      
+      // Verificar se o módulo está desbloqueado
+      const isUnlocked = i === 0 || unlockedModuleIds.has(module.id);
+      
+      if (!isUnlocked) {
+        // Se o módulo não está desbloqueado, não pode ser o atual
+        continue;
+      }
+      
+      const totalLessons = module.groups.reduce(
+        (acc, group) => acc + group.lessons.length,
+        0
+      );
+      const completedLessons =
+        await this.userProgressRepository.countCompletedInModule(
+          userId,
+          module.id
+        );
+      const isCompleted = completedLessons === totalLessons && totalLessons > 0;
+      
+      if (!isCompleted) {
+        currentModuleIdForCompletion = module.id;
+        currentModuleIndex = i;
+        break;
+      }
+    }
+    
+    // Se todos os módulos desbloqueados estão completos, o último desbloqueado é o atual
+    if (currentModuleIndex === -1 && modules.length > 0) {
+      // Encontrar o último módulo desbloqueado
+      for (let i = modules.length - 1; i >= 0; i--) {
+        const module = modules[i];
+        const isUnlocked = i === 0 || unlockedModuleIds.has(module.id);
+        if (isUnlocked) {
+          currentModuleIndex = i;
+          currentModuleIdForCompletion = module.id;
+          break;
+        }
+      }
+    }
 
     // Processar cada módulo e calcular progresso em tempo real
     const modulesWithProgress: ModuleWithProgress[] = await Promise.all(
@@ -149,10 +199,14 @@ export class ListModulesWithProgressUseCase {
             ? Math.round((completedLessons / totalLessons) * 100)
             : 0;
 
-        // Verificar se é o módulo atual
-        const isCurrent = userCourse.currentModuleId === module.id;
+        // Verificar se é o módulo atual (para completar)
+        const isCurrent = currentModuleIdForCompletion === module.id;
 
-        // Verificar se é o próximo módulo ao atual
+        // Verificar se é o módulo ativo (que o usuário está visualizando)
+        // O módulo ativo é aquele que está definido no currentModuleId do userCourse
+        const active = userCourse.currentModuleId !== null && userCourse.currentModuleId === module.id;
+
+        // Verificar se é o próximo módulo ao atual (para completar)
         const isNextModule = currentModuleIndex >= 0 && index === currentModuleIndex + 1;
 
         // Verificar se o módulo atual está completo
@@ -208,6 +262,7 @@ export class ListModulesWithProgressUseCase {
           courseId: module.courseId,
           progress,
           isCurrent,
+          active,
           totalLessons,
           completedLessons,
           locked,
