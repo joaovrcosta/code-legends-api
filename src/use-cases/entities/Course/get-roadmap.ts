@@ -49,6 +49,8 @@ interface GetRoadmapResponse {
       name: string;
     };
     currentModule: number | null;
+    nextModule: number | null;
+    totalModules: number;
     currentClass: number | null;
   };
   modules: RoadmapModule[];
@@ -206,6 +208,8 @@ export class GetRoadmapUseCase {
               .instructor?.name ?? "",
           },
           currentModule: null,
+          nextModule: null,
+          totalModules: modules.length,
           currentClass: null,
         },
         modules: [],
@@ -313,6 +317,16 @@ export class GetRoadmapUseCase {
       }
     }
 
+    // Calcular próximo módulo (se existir)
+    let nextModuleIndex: number | null = null;
+    if (currentModuleIndex !== null) {
+      const currentModuleArrayIndex = currentModuleIndex - 1; // Converter de número do módulo para índice do array
+      if (currentModuleArrayIndex >= 0 && currentModuleArrayIndex < modules.length - 1) {
+        // Se existe um próximo módulo no array
+        nextModuleIndex = currentModuleArrayIndex + 2; // +2 porque: +1 para o próximo índice, +1 para converter para número do módulo
+      }
+    }
+
     // Calcular aula atual (índice na lista ordenada + 1, começando em 1)
     let currentClass: number | null = null;
     if (validCurrentTaskId) {
@@ -338,6 +352,8 @@ export class GetRoadmapUseCase {
           name: courseWithInstructor.instructor?.name ?? "",
         },
         currentModule: currentModuleIndex,
+        nextModule: nextModuleIndex,
+        totalModules: modules.length,
         currentClass,
       },
       modules: roadmapModules,
