@@ -52,6 +52,8 @@ interface GetRoadmapResponse {
     nextModule: number | null;
     totalModules: number;
     currentClass: number | null;
+    canUnlockNextModule?: boolean; // Se pode desbloquear o próximo módulo
+    isLastLessonCompleted?: boolean; // Se a última lição do módulo atual está completa
   };
   modules: RoadmapModule[];
 }
@@ -204,13 +206,16 @@ export class GetRoadmapUseCase {
           progress: 0,
           isCompleted: false,
           author: {
-            name: (course as typeof course & { instructor?: { name: string } })
-              .instructor?.name ?? "",
+            name:
+              (course as typeof course & { instructor?: { name: string } })
+                .instructor?.name ?? "",
           },
           currentModule: null,
           nextModule: null,
           totalModules: modules.length,
           currentClass: null,
+          canUnlockNextModule: false,
+          isLastLessonCompleted: false,
         },
         modules: [],
       };
@@ -321,7 +326,10 @@ export class GetRoadmapUseCase {
     let nextModuleIndex: number | null = null;
     if (currentModuleIndex !== null) {
       const currentModuleArrayIndex = currentModuleIndex - 1; // Converter de número do módulo para índice do array
-      if (currentModuleArrayIndex >= 0 && currentModuleArrayIndex < modules.length - 1) {
+      if (
+        currentModuleArrayIndex >= 0 &&
+        currentModuleArrayIndex < modules.length - 1
+      ) {
         // Se existe um próximo módulo no array
         nextModuleIndex = currentModuleArrayIndex + 2; // +2 porque: +1 para o próximo índice, +1 para converter para número do módulo
       }
@@ -334,6 +342,61 @@ export class GetRoadmapUseCase {
         (l) => l.id === validCurrentTaskId
       );
       currentClass = classIndex >= 0 ? classIndex + 1 : null;
+    }
+
+    // Calcular se a última lição do módulo atual está completa
+    let isLastLessonCompleted = false;
+    if (currentModule) {
+      // Encontrar todas as lições do módulo atual
+      const currentModuleLessons: Array<{
+        id: number;
+        order: number;
+        groupIndex: number;
+      }> = [];
+      currentModule.groups.forEach((group, groupIndex) => {
+        group.lessons.forEach((lesson) => {
+          currentModuleLessons.push({
+            id: lesson.id,
+            order: lesson.order,
+            groupIndex,
+          });
+        });
+      });
+
+      if (currentModuleLessons.length > 0) {
+        // Ordenar por grupo e depois por order para encontrar a última lição
+        currentModuleLessons.sort((a, b) => {
+          if (a.groupIndex !== b.groupIndex) {
+            return a.groupIndex - b.groupIndex;
+          }
+          return a.order - b.order;
+        });
+
+        const lastLesson =
+          currentModuleLessons[currentModuleLessons.length - 1];
+        isLastLessonCompleted = progressMap.get(lastLesson.id) ?? false;
+      }
+    }
+
+    // Calcular se pode desbloquear o próximo módulo
+    // Precisa: todas as lições do módulo atual completadas E existe próximo módulo
+    let canUnlockNextModule = false;
+    if (currentModule && nextModuleIndex !== null) {
+      // Verificar se todas as lições do módulo atual foram completadas
+      const moduleLessons: Array<{ id: number }> = [];
+      currentModule.groups.forEach((group) => {
+        group.lessons.forEach((lesson) => {
+          moduleLessons.push({ id: lesson.id });
+        });
+      });
+
+      const totalModuleLessons = moduleLessons.length;
+      const completedModuleLessons = userProgresses.filter((p) => {
+        return p.isCompleted && moduleLessons.some((l) => l.id === p.taskId);
+      }).length;
+
+      canUnlockNextModule =
+        completedModuleLessons === totalModuleLessons && totalModuleLessons > 0;
     }
 
     // Type assertion necessário porque o Prisma retorna Course com includes
@@ -355,6 +418,8 @@ export class GetRoadmapUseCase {
         nextModule: nextModuleIndex,
         totalModules: modules.length,
         currentClass,
+        canUnlockNextModule,
+        isLastLessonCompleted,
       },
       modules: roadmapModules,
     };
