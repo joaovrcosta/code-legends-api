@@ -17,10 +17,12 @@ import { getActive } from "./get-active.controller";
 import { myLearning } from "./my-learning.controller";
 import { resetProgress } from "./reset-progress.controller";
 import { getCourseProgress } from "./get-progress.controller";
+import { getLessonBySlug } from "./get-lesson-by-slug.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyJWTOptional } from "../../middlewares/verify-jwt-optional";
 import { verifyAdmin } from "../../middlewares/verify-admin";
 import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-admin";
+import { verifyLessonAccess } from "../../middlewares/verify-lesson-access";
 
 export async function courseRoutes(app: FastifyInstance) {
   // Rotas públicas (com autenticação opcional para incluir isEnrolled)
@@ -38,11 +40,19 @@ export async function courseRoutes(app: FastifyInstance) {
   app.delete("/courses/:id", { onRequest: [verifyAdmin] }, remove);
 
   // Rotas protegidas - requer autenticação JWT
+  // Rotas mais específicas primeiro
+  app.get(
+    "/courses/:courseId/lessons/:lessonSlug",
+    {
+      onRequest: [verifyJWT, verifyLessonAccess({ lessonSlugParam: "lessonSlug" })],
+    },
+    getLessonBySlug
+  );
+  app.get("/courses/:id/roadmap", { onRequest: [verifyJWT] }, getRoadmap);
+  app.get("/courses/:courseIdentifier/progress", { onRequest: [verifyJWT] }, getCourseProgress);
   app.post("/courses/:id/enroll", { onRequest: [verifyJWT] }, enroll);
   app.post("/courses/:id/start", { onRequest: [verifyJWT] }, start);
   app.post("/courses/:id/reset-progress", { onRequest: [verifyJWT] }, resetProgress);
-  app.get("/courses/:id/roadmap", { onRequest: [verifyJWT] }, getRoadmap);
-  app.get("/courses/:courseIdentifier/progress", { onRequest: [verifyJWT] }, getCourseProgress);
   app.get("/courses/:id/continue", { onRequest: [verifyJWT] }, continueCourse);
   app.get("/courses/continue", { onRequest: [verifyJWT] }, continueCourse); // Sem ID: usa curso ativo
   app.get("/courses/enrolled", { onRequest: [verifyJWT] }, listEnrolled);

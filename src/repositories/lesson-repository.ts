@@ -33,6 +33,7 @@ export interface ILessonRepository {
   findAll(groupId?: number): Promise<Lesson[]>;
   findById(id: number): Promise<Lesson | null>;
   findBySlug(slug: string): Promise<Lesson | null>;
+  findByCourseIdAndSlug(courseId: string, slug: string): Promise<Lesson | null>;
   update(id: number, data: UpdateLessonData): Promise<Lesson>;
   delete(id: number): Promise<void>;
 }

@@ -23,8 +23,8 @@ async function main() {
       order: 2,
     },
     {
-      name: "Design",
-      slug: "design",
+      name: "Designer",
+      slug: "designer",
       description: "Design UI/UX e interfaces visuais",
       icon: "🎨",
       color: "#EC4899",
@@ -45,30 +45,6 @@ async function main() {
       icon: "💼",
       color: "#8B5CF6",
       order: 5,
-    },
-    {
-      name: "DevOps",
-      slug: "devops",
-      description: "Infraestrutura, deploy e automação",
-      icon: "🚀",
-      color: "#06B6D4",
-      order: 6,
-    },
-    {
-      name: "Mobile",
-      slug: "mobile",
-      description: "Desenvolvimento de aplicativos móveis",
-      icon: "📱",
-      color: "#F97316",
-      order: 7,
-    },
-    {
-      name: "Data Science",
-      slug: "data-science",
-      description: "Ciência de dados e análise",
-      icon: "📊",
-      color: "#14B8A6",
-      order: 8,
     },
   ];
 

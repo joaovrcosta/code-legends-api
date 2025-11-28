@@ -177,6 +177,48 @@ export class PrismaLessonRepository implements ILessonRepository {
     return lesson;
   }
 
+  async findByCourseIdAndSlug(courseId: string, slug: string): Promise<Lesson | null> {
+    const lesson = await prisma.lesson.findFirst({
+      where: {
+        slug,
+        submodule: {
+          module: {
+            courseId,
+          },
+        },
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            bio: true,
+            expertise: true,
+          },
+        },
+        submodule: {
+          select: {
+            id: true,
+            title: true,
+            moduleId: true,
+            module: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                courseId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return lesson;
+  }
+
   async update(id: number, data: UpdateLessonData): Promise<Lesson> {
     const lesson = await prisma.lesson.update({
       where: {
