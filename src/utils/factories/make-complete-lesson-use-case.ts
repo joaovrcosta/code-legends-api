@@ -4,6 +4,7 @@ import { PrismaUserCourseRepository } from "../../repositories/prisma/prisma-use
 import { PrismaLessonRepository } from "../../repositories/prisma/prisma-lesson-repository";
 import { PrismaModuleRepository } from "../../repositories/prisma/prisma-module-repository";
 import { PrismaCourseRepository } from "../../repositories/prisma/prisma-course-repository";
+import { PrismaUsersRepository } from "../../repositories/prisma/prisma-users-reposity";
 import { CompleteLessonUseCase } from "../../use-cases/entities/Lesson/complete";
 
 export function makeCompleteLessonUseCase() {
@@ -13,13 +14,15 @@ export function makeCompleteLessonUseCase() {
   const lessonRepository = new PrismaLessonRepository();
   const moduleRepository = new PrismaModuleRepository();
   const courseRepository = new PrismaCourseRepository();
+  const usersRepository = new PrismaUsersRepository();
   const completeLessonUseCase = new CompleteLessonUseCase(
     userProgressRepository,
     userModuleProgressRepository,
     userCourseRepository,
     lessonRepository,
     moduleRepository,
-    courseRepository
+    courseRepository,
+    usersRepository
   );
 
   return completeLessonUseCase;

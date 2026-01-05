@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { LessonNotFoundError } from "../../../use-cases/errors/lesson-not-found";
+import { CourseNotFoundError } from "../../../use-cases/errors/course-not-found";
 import { makeCompleteLessonUseCase } from "../../../utils/factories/make-complete-lesson-use-case";
 
 export async function complete(request: FastifyRequest, reply: FastifyReply) {
@@ -27,16 +28,48 @@ export async function complete(request: FastifyRequest, reply: FastifyReply) {
     return reply.status(200).send(result);
   } catch (error) {
     if (error instanceof LessonNotFoundError) {
-      return reply.status(404).send({ message: error.message });
+      return reply.status(404).send({ 
+        success: false,
+        error: error.message,
+        code: "LESSON_NOT_FOUND"
+      });
+    }
+
+    if (error instanceof CourseNotFoundError) {
+      return reply.status(404).send({ 
+        success: false,
+        error: error.message,
+        code: "COURSE_NOT_FOUND"
+      });
     }
 
     if (
       error instanceof Error &&
       error.message === "User is not enrolled in this course"
     ) {
-      return reply.status(403).send({ message: error.message });
+      return reply.status(403).send({ 
+        success: false,
+        error: error.message,
+        code: "NOT_ENROLLED"
+      });
     }
 
-    return reply.status(500).send({ message: "Internal server error" });
+    if (
+      error instanceof Error &&
+      (error.message === "User not found" || error.message === "Group not found")
+    ) {
+      return reply.status(500).send({ 
+        success: false,
+        error: "Internal server error",
+        code: "INTERNAL_ERROR"
+      });
+    }
+
+    console.error("Error completing lesson:", error);
+    return reply.status(500).send({ 
+      success: false,
+      error: "Internal server error",
+      code: "INTERNAL_ERROR"
+    });
   }
 }

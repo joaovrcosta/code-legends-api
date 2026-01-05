@@ -111,6 +111,9 @@ CREATE TABLE "User" (
     "onboardingCompleted" BOOLEAN NOT NULL DEFAULT false,
     "onboardingGoal" TEXT,
     "onboardingCareer" TEXT,
+    "totalXp" INTEGER NOT NULL DEFAULT 0,
+    "level" INTEGER NOT NULL DEFAULT 1,
+    "xpToNextLevel" INTEGER NOT NULL DEFAULT 100,
     "activeCourseId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -230,6 +233,19 @@ CREATE TABLE "FavoriteCourse" (
     CONSTRAINT "FavoriteCourse_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "UserXpHistory" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "xpAmount" INTEGER NOT NULL,
+    "source" TEXT NOT NULL,
+    "sourceId" INTEGER,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserXpHistory_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Course_slug_key" ON "Course"("slug");
 
@@ -268,6 +284,12 @@ CREATE UNIQUE INDEX "Address_userId_key" ON "Address"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "FavoriteCourse_userId_courseId_key" ON "FavoriteCourse"("userId", "courseId");
+
+-- CreateIndex
+CREATE INDEX "UserXpHistory_userId_idx" ON "UserXpHistory"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserXpHistory_userId_createdAt_idx" ON "UserXpHistory"("userId", "createdAt");
 
 -- AddForeignKey
 ALTER TABLE "Course" ADD CONSTRAINT "Course_instructorId_fkey" FOREIGN KEY ("instructorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -340,3 +362,6 @@ ALTER TABLE "FavoriteCourse" ADD CONSTRAINT "FavoriteCourse_userId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "FavoriteCourse" ADD CONSTRAINT "FavoriteCourse_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserXpHistory" ADD CONSTRAINT "UserXpHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
