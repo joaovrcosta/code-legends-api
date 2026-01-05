@@ -11,7 +11,13 @@ export async function listWithProgress(
     courseIdentifier: z.string(),
   });
 
+  const listModulesQuerySchema = z.object({
+    currentModule: z.string().optional(),
+  });
+
   const { courseIdentifier } = listModulesParamsSchema.parse(request.params);
+  const { currentModule } = listModulesQuerySchema.parse(request.query);
+
 
   const isUUID =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -28,6 +34,7 @@ export async function listWithProgress(
       userId: request.user.id,
       courseId,
       slug,
+      currentModule,
     });
 
     return reply.status(200).send({ modules, nextModule });

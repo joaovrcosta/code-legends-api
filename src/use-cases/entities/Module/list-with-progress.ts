@@ -24,6 +24,7 @@ interface ListModulesWithProgressRequest {
   userId: string;
   courseId?: string;
   slug?: string;
+  currentModule?: string;
 }
 
 interface ListModulesWithProgressResponse {
@@ -44,6 +45,7 @@ export class ListModulesWithProgressUseCase {
     userId,
     courseId,
     slug,
+    currentModule,
   }: ListModulesWithProgressRequest): Promise<ListModulesWithProgressResponse> {
     // Se slug foi fornecido, buscar o curso pelo slug
     let finalCourseId: string;
@@ -131,48 +133,63 @@ export class ListModulesWithProgressUseCase {
     let currentModuleIndex = -1;
     let currentModuleIdForCompletion: string | null = null;
     
-    // Determinar qual módulo o aluno está trabalhando para completar
-    // Isso é baseado no primeiro módulo desbloqueado que não está 100% completo
-    // O primeiro módulo sempre está desbloqueado
-    for (let i = 0; i < modules.length; i++) {
-      const module = modules[i];
-      
-      // Verificar se o módulo está desbloqueado
-      const isUnlocked = i === 0 || unlockedModuleIds.has(module.id);
-      
-      if (!isUnlocked) {
-        // Se o módulo não está desbloqueado, não pode ser o atual
-        continue;
-      }
-      
-      const totalLessons = module.groups.reduce(
-        (acc, group) => acc + group.lessons.length,
-        0
-      );
-      const completedLessons =
-        await this.userProgressRepository.countCompletedInModule(
-          userId,
-          module.id
-        );
-      const isCompleted = completedLessons === totalLessons && totalLessons > 0;
-      
-      if (!isCompleted) {
-        currentModuleIdForCompletion = module.id;
-        currentModuleIndex = i;
-        break;
+    // Se currentModule foi fornecido como parâmetro, usar ele diretamente
+    // Caso contrário, usar o currentModuleId do userCourse (mesmo do roadmap)
+    const moduleToUse = currentModule || userCourse.currentModuleId;
+    
+    if (moduleToUse) {
+      const moduleIndex = modules.findIndex((m) => m.id === moduleToUse || m.slug === moduleToUse);
+      if (moduleIndex >= 0) {
+        currentModuleIndex = moduleIndex;
+        currentModuleIdForCompletion = modules[moduleIndex].id;
       }
     }
     
-    // Se todos os módulos desbloqueados estão completos, o último desbloqueado é o atual
-    if (currentModuleIndex === -1 && modules.length > 0) {
-      // Encontrar o último módulo desbloqueado
-      for (let i = modules.length - 1; i >= 0; i--) {
+    // Se não encontrou pelo parâmetro ou userCourse, determinar automaticamente
+    if (currentModuleIndex === -1) {
+      // Determinar qual módulo o aluno está trabalhando para completar
+      // Isso é baseado no primeiro módulo desbloqueado que não está 100% completo
+      // O primeiro módulo sempre está desbloqueado
+      for (let i = 0; i < modules.length; i++) {
         const module = modules[i];
+        
+        // Verificar se o módulo está desbloqueado
         const isUnlocked = i === 0 || unlockedModuleIds.has(module.id);
-        if (isUnlocked) {
-          currentModuleIndex = i;
+        
+        if (!isUnlocked) {
+          // Se o módulo não está desbloqueado, não pode ser o atual
+          continue;
+        }
+        
+        const totalLessons = module.groups.reduce(
+          (acc, group) => acc + group.lessons.length,
+          0
+        );
+        const completedLessons =
+          await this.userProgressRepository.countCompletedInModule(
+            userId,
+            module.id
+          );
+        const isCompleted = completedLessons === totalLessons && totalLessons > 0;
+        
+        if (!isCompleted) {
           currentModuleIdForCompletion = module.id;
+          currentModuleIndex = i;
           break;
+        }
+      }
+      
+      // Se todos os módulos desbloqueados estão completos, o último desbloqueado é o atual
+      if (currentModuleIndex === -1 && modules.length > 0) {
+        // Encontrar o último módulo desbloqueado
+        for (let i = modules.length - 1; i >= 0; i--) {
+          const module = modules[i];
+          const isUnlocked = i === 0 || unlockedModuleIds.has(module.id);
+          if (isUnlocked) {
+            currentModuleIndex = i;
+            currentModuleIdForCompletion = module.id;
+            break;
+          }
         }
       }
     }

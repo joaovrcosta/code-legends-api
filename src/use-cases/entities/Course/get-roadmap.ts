@@ -49,6 +49,7 @@ interface GetRoadmapResponse {
       name: string;
     };
     currentModule: number | null;
+    currentModuleId: string | null;
     nextModule: number | null;
     totalModules: number;
     currentClass: number | null;
@@ -383,6 +384,7 @@ export class GetRoadmapUseCase {
           name: courseWithInstructor.instructor?.name ?? "",
         },
         currentModule: currentModuleIndex,
+        currentModuleId: currentModuleId,
         nextModule: nextModuleIndex,
         totalModules: modules.length,
         currentClass,
