@@ -152,13 +152,22 @@ export class GetRoadmapUseCase {
     const hasProgress = userProgresses.some((p) => p.isCompleted);
 
     // Determinar qual será a lição atual
-    // Se não houver progresso, ignorar currentTaskId e usar a primeira lição
-    const validCurrentTaskId =
-      hasProgress &&
-      currentTaskId &&
-      allLessons.some((l) => l.id === currentTaskId)
-        ? currentTaskId
-        : allLessons[0]?.id ?? null;
+    // Se não houver progresso, SEMPRE usar a primeira lição (curso resetado ou novo)
+    // Se houver progresso, usar o currentTaskId se ele existir na lista de lessons
+    let validCurrentTaskId: number | null = null;
+    
+    if (!hasProgress) {
+      // Sem progresso = curso resetado ou novo, sempre começar da primeira lesson
+      validCurrentTaskId = allLessons[0]?.id ?? null;
+    } else {
+      // Com progresso, usar o currentTaskId se for válido
+      if (currentTaskId && allLessons.some((l) => l.id === currentTaskId)) {
+        validCurrentTaskId = currentTaskId;
+      } else {
+        // Se currentTaskId não for válido, usar a primeira lesson
+        validCurrentTaskId = allLessons[0]?.id ?? null;
+      }
+    }
 
     // Identificar o módulo atual
     let currentModuleId: string | null = null;
@@ -304,17 +313,10 @@ export class GetRoadmapUseCase {
       }
     }
 
-    // Calcular aula atual (índice na lista ordenada + 1, começando em 1)
-    let currentClass: number | null = null;
-    if (validCurrentTaskId) {
-      const classIndex = allLessons.findIndex(
-        (l) => l.id === validCurrentTaskId
-      );
-      currentClass = classIndex >= 0 ? classIndex + 1 : null;
-    }
-
     // Calcular se a última lição do módulo atual está completa
     let isLastLessonCompleted = false;
+    let currentClass: number | null = null;
+    
     if (currentModule) {
       // Encontrar todas as lições do módulo atual
       const currentModuleLessons: Array<{
@@ -333,7 +335,7 @@ export class GetRoadmapUseCase {
       });
 
       if (currentModuleLessons.length > 0) {
-        // Ordenar por grupo e depois por order para encontrar a última lição
+        // Ordenar por grupo e depois por order
         currentModuleLessons.sort((a, b) => {
           if (a.groupIndex !== b.groupIndex) {
             return a.groupIndex - b.groupIndex;
@@ -341,6 +343,15 @@ export class GetRoadmapUseCase {
           return a.order - b.order;
         });
 
+        // Calcular currentClass dentro do módulo atual (não em relação a todas as lessons do curso)
+        if (validCurrentTaskId) {
+          const classIndexInModule = currentModuleLessons.findIndex(
+            (l) => l.id === validCurrentTaskId
+          );
+          currentClass = classIndexInModule >= 0 ? classIndexInModule + 1 : null;
+        }
+
+        // Encontrar a última lição do módulo atual
         const lastLesson =
           currentModuleLessons[currentModuleLessons.length - 1];
         isLastLessonCompleted = progressMap.get(lastLesson.id) ?? false;

@@ -52,8 +52,14 @@ export class UnlockNextModuleUseCase {
       where: { courseId },
       include: {
         groups: {
+          orderBy: {
+            id: "asc",
+          },
           include: {
             lessons: {
+              orderBy: {
+                order: "asc",
+              },
               select: {
                 id: true,
               },
@@ -78,14 +84,21 @@ export class UnlockNextModuleUseCase {
     // Se não há módulo atual, definir o primeiro como atual
     if (currentModuleIndex === -1) {
       const firstModule = allModules[0];
-      const firstGroup = firstModule.groups[0];
-      const firstLesson = firstGroup?.lessons[0];
+      
+      // Encontrar a primeira lesson do primeiro módulo (primeiro grupo com lessons, primeira lesson em ordem)
+      let firstLesson: { id: number } | null = null;
+      for (const group of firstModule.groups) {
+        if (group.lessons.length > 0) {
+          firstLesson = group.lessons[0];
+          break;
+        }
+      }
 
       const updatedUserCourse = await this.userCourseRepository.update(
         userCourse.id,
         {
           currentModuleId: firstModule.id,
-          currentTaskId: firstLesson?.id ?? null,
+          currentTaskId: firstLesson ? firstLesson.id : null,
           lastAccessedAt: new Date(),
         }
       );
@@ -129,8 +142,15 @@ export class UnlockNextModuleUseCase {
 
     // Avançar para o próximo módulo
     const nextModule = allModules[currentModuleIndex + 1];
-    const nextModuleFirstGroup = nextModule.groups[0];
-    const nextModuleFirstLesson = nextModuleFirstGroup?.lessons[0];
+    
+    // Encontrar a primeira lesson do próximo módulo (primeiro grupo com lessons, primeira lesson em ordem)
+    let nextModuleFirstLesson: { id: number } | null = null;
+    for (const group of nextModule.groups) {
+      if (group.lessons.length > 0) {
+        nextModuleFirstLesson = group.lessons[0];
+        break;
+      }
+    }
 
     // Salvar o módulo desbloqueado no banco de dados
     const existingUnlock = await this.unlockedModuleRepository.findByUserAndModule(
@@ -151,7 +171,7 @@ export class UnlockNextModuleUseCase {
       userCourse.id,
       {
         currentModuleId: nextModule.id,
-        currentTaskId: nextModuleFirstLesson?.id ?? null,
+        currentTaskId: nextModuleFirstLesson ? nextModuleFirstLesson.id : null,
         lastAccessedAt: new Date(),
       }
     );
