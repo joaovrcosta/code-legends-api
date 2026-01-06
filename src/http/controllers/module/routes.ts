@@ -4,6 +4,7 @@ import { list } from "./list.controller";
 import { listWithProgress } from "./list-with-progress.controller";
 import { updateCurrent } from "./update-current.controller";
 import { unlockNextModule } from "./unlock-next-module.controller";
+import { continueToNextModule } from "./continue-to-next-module.controller";
 import { getBySlug } from "./get-by-slug.controller";
 import { update } from "./update.controller";
 import { remove } from "./delete.controller";
@@ -23,6 +24,11 @@ export async function moduleRoutes(app: FastifyInstance) {
     "/courses/:courseId/modules/:moduleId/current",
     { onRequest: [verifyJWT] },
     updateCurrent
+  );
+  app.post(
+    "/courses/:courseId/modules/continue-next",
+    { onRequest: [verifyJWT] },
+    continueToNextModule
   );
   app.post(
     "/courses/:courseId/modules/unlock-next",
