@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { makeGetCertificateByIdUseCase } from "../../../utils/factories/make-get-certificate-by-id-use-case";
 import { CertificateNotFoundError } from "../../../use-cases/errors/certificate-not-found";
+import { sanitizeCertificate } from "../../utils/sanitize";
 
 export async function verifyCertificate(
   request: FastifyRequest,
@@ -27,27 +28,14 @@ export async function verifyCertificate(
 
     // Retornar informações relevantes para verificação pública
     // SEM expor email por questões de privacidade (LGPD/GDPR)
-    // O certificado retornado pelo repositório inclui as relações user, course e template
-    const cert = certificate as any;
+    // Usar DTO público para garantir que apenas dados seguros sejam expostos
+    // Verificação pública não tem userId, então retorna DTO público
+    const sanitized = sanitizeCertificate(certificate, {
+      // Sem requestingUserId = DTO público
+    });
 
     return reply.status(200).send({
-      certificate: {
-        id: cert.id,
-        createdAt: cert.createdAt,
-        user: {
-          name: cert.user?.name,
-          // Email removido por questões de privacidade e segurança
-        },
-        course: {
-          id: cert.course?.id,
-          title: cert.course?.title,
-          slug: cert.course?.slug,
-          instructor: {
-            name: cert.course?.instructor?.name,
-          },
-        },
-        template: cert.template,
-      },
+      certificate: sanitized,
       verified: true, // Indica que o certificado foi encontrado e é válido
     });
   } catch (error) {

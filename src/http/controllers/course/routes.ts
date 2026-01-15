@@ -25,22 +25,17 @@ import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-
 import { verifyLessonAccess } from "../../middlewares/verify-lesson-access";
 
 export async function courseRoutes(app: FastifyInstance) {
-  // Rotas públicas (com autenticação opcional para incluir isEnrolled)
   app.get("/courses", { onRequest: [verifyJWTOptional] }, list); // Suporta ?category=id&categorySlug=slug&instructor=id&search=termo - isEnrolled incluído se autenticado
   app.get("/courses/search", { onRequest: [verifyJWTOptional] }, search); // Busca cursos por nome - Suporta ?q=termo - isEnrolled incluído se autenticado
   app.get("/courses/recent", listRecent); // Suporta ?limit=10
   app.get("/courses/popular", listPopular); // Suporta ?limit=10
   app.get("/courses/:slug", getBySlug);
 
-  // Rotas protegidas - apenas INSTRUCTOR ou ADMIN
   app.post("/courses", { onRequest: [verifyInstructorOrAdmin] }, create);
 
-  // Rotas protegidas - apenas ADMIN
   app.put("/courses/:id", { onRequest: [verifyAdmin] }, update);
   app.delete("/courses/:id", { onRequest: [verifyAdmin] }, remove);
 
-  // Rotas protegidas - requer autenticação JWT
-  // Rotas mais específicas primeiro
   app.get(
     "/courses/:courseId/lessons/:lessonSlug",
     {

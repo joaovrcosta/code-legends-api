@@ -42,6 +42,30 @@ export class PrismaUsersRepository implements IUsersRepository {
     return user;
   }
 
+  async findByIdWithAddress(id: string) {
+    const user = await prisma.user.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        Address: true,
+      },
+    });
+    return user;
+  }
+
+  async findAll(): Promise<User[]> {
+    const users = await prisma.user.findMany({
+      include: {
+        Address: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return users;
+  }
+
   async update(id: string, data: Partial<User>): Promise<User> {
     // Filtrar apenas campos válidos do User e remover undefined
     // Excluir campos de relação e campos que não devem ser atualizados diretamente
@@ -71,5 +95,11 @@ export class PrismaUsersRepository implements IUsersRepository {
       data: updateData,
     });
     return user;
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.user.delete({
+      where: { id },
+    });
   }
 }

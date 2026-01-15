@@ -54,7 +54,7 @@ export class CreateCourseUseCase {
 
     // Validar se o usuário tem role de INSTRUCTOR ou ADMIN
     if (instructor.role !== "INSTRUCTOR" && instructor.role !== "ADMIN") {
-      throw new Error("User is not an instructor");
+      throw new Error("User is not an instructor or admin");
     }
 
     // Validar categoria (se fornecida)

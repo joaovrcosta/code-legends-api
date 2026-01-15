@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { makeListCoursesUseCase } from "../../../utils/factories/make-list-courses-use-case";
+import { sanitizeCourses } from "../../utils/sanitize";
 
 export async function list(request: FastifyRequest, reply: FastifyReply) {
   const listCoursesQuerySchema = z.object({
@@ -27,7 +28,10 @@ export async function list(request: FastifyRequest, reply: FastifyReply) {
       userId, // Passar userId opcional
     });
 
-    return reply.status(200).send({ courses });
+    // Sanitizar cursos para garantir que dados de instrutor sejam públicos apenas
+    const sanitized = sanitizeCourses(courses);
+
+    return reply.status(200).send({ courses: sanitized });
   } catch (error) {
     return reply.status(500).send({ message: "Internal server error" });
   }

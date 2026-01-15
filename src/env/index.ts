@@ -8,6 +8,24 @@ const envSchema = z.object({
   DATABASE_CLIENT: z.enum(["pg"]),
   JWT_SECRET: z.string(),
   PORT: z.coerce.number().default(3333),
+  COOKIE_SECURE: z
+    .preprocess(
+      (val) => {
+        // Se não definido, usar true em produção, false em desenvolvimento
+        if (val === undefined || val === null) {
+          return process.env.NODE_ENV === "production";
+        }
+        if (typeof val === "boolean") {
+          return val;
+        }
+        if (typeof val === "string") {
+          return val === "true" || val === "1";
+        }
+        return false;
+      },
+      z.boolean()
+    )
+    .default(process.env.NODE_ENV === "production"),
 });
 
 const _env = envSchema.safeParse(process.env);

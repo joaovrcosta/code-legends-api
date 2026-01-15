@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { makeRefreshTokenUseCase } from "../../../utils/factories/make-refresh-token-use-case";
 import { UserNotFoundError } from "../../../use-cases/errors/user-not-found";
+import { env } from "../../../env/index";
 
 export async function refreshToken(
   request: FastifyRequest,
@@ -72,7 +73,7 @@ export async function refreshToken(
     return reply
       .setCookie("refreshToken", newRefreshToken, {
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        secure: env.COOKIE_SECURE,
         sameSite: "strict",
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds

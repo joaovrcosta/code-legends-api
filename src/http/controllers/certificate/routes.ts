@@ -6,6 +6,7 @@ import { verifyCertificate } from "./verify.controller";
 import { deleteCertificate } from "./delete.controller";
 import { verifyJWT } from "../../middlewares/verify-jwt";
 import { verifyInstructorOrAdmin } from "../../middlewares/verify-instructor-or-admin";
+import { verifyOwnership } from "../../middlewares/verify-ownership";
 
 export async function certificateRoutes(app: FastifyInstance) {
   // Todas as rotas de certificados precisam de autenticação
@@ -14,8 +15,14 @@ export async function certificateRoutes(app: FastifyInstance) {
   // Listar certificados do usuário autenticado
   app.get("/certificates", listCertificates);
 
-  // Buscar certificado por ID
-  app.get("/certificates/:id", getCertificateById);
+  // Buscar certificado por ID - com verificação de propriedade para prevenir IDOR
+  app.get(
+    "/certificates/:id",
+    {
+      onRequest: [verifyOwnership({ resourceType: "certificate", resourceIdParam: "id" })],
+    },
+    getCertificateById
+  );
 
   // Criar certificado - usuários podem gerar seus próprios certificados quando completarem o curso
   app.post("/certificates", createCertificate);
