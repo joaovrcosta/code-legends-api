@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { User, Role } from "@prisma/client";
 import { IUsersRepository } from "../users-repository";
 import { prisma } from "../../lib/prisma";
 import bcrypt from "bcryptjs";
@@ -56,6 +56,38 @@ export class PrismaUsersRepository implements IUsersRepository {
 
   async findAll(): Promise<User[]> {
     const users = await prisma.user.findMany({
+      include: {
+        Address: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return users;
+  }
+
+  async findByRole(role: Role): Promise<(User & { Address?: any })[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        role,
+      },
+      include: {
+        Address: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return users;
+  }
+
+  async findByRoles(roles: Role[]): Promise<(User & { Address?: any })[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        role: {
+          in: roles,
+        },
+      },
       include: {
         Address: true,
       },
